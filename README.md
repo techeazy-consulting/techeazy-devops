@@ -11,20 +11,23 @@ Before you begin, ensure you have the following:
 
 ## Steps to Run the Application
 
-1.  **Clone the repository:**
 
-    ```bash
-    git clone https://github.com/sumit-patil-24/tech_eazy_sumit-patil-24_aws_internship.git
-    cd tech_eazy_sumit-patil-24_aws_internship/terraform
-    ```
-
-2.  **Configure AWS Credentials:**
+1.  **Configure AWS Credentials:**
 
     ```bash
     aws configure
     ```
 
     Follow the prompts to enter your AWS Access Key ID, Secret Access Key, region, and output format.  **Important:** Do *not* hardcode credentials in the repository.
+
+
+2.  **Clone the repository:**
+
+    ```bash
+    git clone https://github.com/sumit-patil-24/tech_eazy_sumit-patil-24_aws_internship.git
+    cd tech_eazy_sumit-patil-24_aws_internship/terraform
+    ```
+
 
 3.  **Initialize Terraform:**
 
