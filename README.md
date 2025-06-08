@@ -72,19 +72,21 @@ Before you begin, ensure you have the following:
 
     Type `yes` when prompted to confirm the deployment.
 
-7.  **Access the application:**
+    You can obtain the public IP address using the following command after the `apply` is complete:
+
+    ```bash
+    terraform output public-ip-address
+    ```
+
+8.  **Access the application:**
 
     Once the deployment is complete, Terraform will output the public IP address of the EC2 instance. You can access the running application in your web browser using the following URL:
 
     ```
     http://<public_ip>:80
     ```
+application needs some time to start so wait!!!
 
-    You can obtain the public IP address using the following command after the `apply` is complete:
-
-    ```bash
-    terraform output public-ip-address
-    ```
 
 
 **Important:**
