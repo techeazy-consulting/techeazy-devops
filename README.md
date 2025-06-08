@@ -37,7 +37,7 @@ Before you begin, ensure you have the following:
     If you don't already have an SSH key pair, you can generate one using the following command:
 
     ```bash
-    ssh-keygen -t new-kye.pem
+    ssh-keygen -t new-key.pem
     ```
 
     This will create a private key (`~/.ssh/id_rsa`) and a public key (`~/.ssh/id_rsa.pub`).  **Important:**  Keep the private key secure.  You will need it to connect to the EC2 instance.  The public key will       be associated with the instance via the `key_name_value` variable.
@@ -56,14 +56,14 @@ Before you begin, ensure you have the following:
 
         ```bash
         terraform workspace select dev
-        terraform apply -var-file="modules/dev.tfvars"
+        terraform apply -var-file="dev.tfvars"
         ```
 
     *   **For the "Prod" stage:**
 
         ```bash
         terraform workspace select prod
-        terraform apply -var-file="modules/prod.tfvars"
+        terraform apply -var-file="prod.tfvars"
         ```
 
     Type `yes` when prompted to confirm the deployment.
@@ -85,8 +85,8 @@ Before you begin, ensure you have the following:
 
 **Important:**
 
-*   Customize the values in `modules/dev.tfvars` and `modules/prod.tfvars` to match your desired configurations for each environment.
-*   **Specifically, ensure that the `key_name_value` is set to the correct key pair name in your AWS account.**  The default value in `modules/variables.tf` is `new-key.pem`, but this should be overridden in your environment-specific `tfvars` files.
+*   Customize the values in `dev.tfvars` and `prod.tfvars` to match your desired configurations for each environment.
+*   **Specifically, ensure that the `key_name_value` is set to the correct key pair name in your AWS account.**  The default value in `variables.tf` is `new-key.pem`, but this should be overridden in your environment-specific `tfvars` files.
 
 ## Cleaning Up Resources
 
@@ -101,9 +101,9 @@ To destroy the deployed resources for a specific stage:
 2.  **Destroy the resources:**
 
     ```bash
-    terraform destroy -var-file="modules/dev.tfvars"  # or modules/prod.tfvars
+    terraform destroy -var-file="dev.tfvars"  # or prod.tfvars
     ```
 
 ## `stop_after_minutes` Warning
 
-The `modules/script.sh` file contains a command to shut down the instance after a specified number of minutes.  Be aware of this behavior and adjust the `stop_after_minutes` variable accordingly.  This is for cost-saving purposes as per the assignment requirements.  Consider removing or commenting out this line if you do not want the instance to automatically shut down.
+The `script.sh` file contains a command to shut down the instance after a specified number of minutes.  Be aware of this behavior and adjust the `stop_after_minutes` variable accordingly.  This is for cost-saving purposes as per the assignment requirements.  Consider removing or commenting out this line if you do not want the instance to automatically shut down.
