@@ -6,9 +6,7 @@ This project automates the deployment of an EC2 instance, configures it with Jav
 
 Before you begin, ensure you have the following:
 
-*   An AWS account with Free Tier access.
-*   [AWS CLI](https://aws.amazon.com/cli/) installed and configured.
-*   [Terraform](https://www.terraform.io/downloads.html) installed.
+*   AWS CLI and Terraform installed
 
 
 ## Steps to Run the Application
@@ -34,14 +32,25 @@ Before you begin, ensure you have the following:
     terraform init
     ```
 
-4.  **Create Terraform Workspaces (Dev/Prod):**
+4.  **Generate an SSH Key Pair (if you don't have one):**
+
+    If you don't already have an SSH key pair, you can generate one using the following command:
+
+    ```bash
+    ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa
+    ```
+
+    This will create a private key (`~/.ssh/id_rsa`) and a public key (`~/.ssh/id_rsa.pub`).  **Important:**  Keep the private key secure.  You will need it to connect to the EC2 instance.  The public key will       be associated with the instance via the `key_name_value` variable.
+
+
+5.  **Create Terraform Workspaces (Dev/Prod):**
 
     ```bash
     terraform workspace new dev
     terraform workspace new prod
     ```
 
-5.  **Apply the Configuration for a Specific Stage:**
+6.  **Apply the Configuration for a Specific Stage:**
 
     *   **For the "Dev" stage:**
 
@@ -59,7 +68,7 @@ Before you begin, ensure you have the following:
 
     Type `yes` when prompted to confirm the deployment.
 
-6.  **Access the application:**
+7.  **Access the application:**
 
     Once the deployment is complete, Terraform will output the public IP address of the EC2 instance. You can access the running application in your web browser using the following URL:
 
