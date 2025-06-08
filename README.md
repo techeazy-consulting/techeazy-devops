@@ -42,7 +42,7 @@ Before you begin, ensure you have the following:
     ```bash
     ssh-keygen -t rsa
     ```
-    insert new-key.pem after it ask for something
+    insert "new-key.pem" after it ask for something
 
     This will create a private key (`~/.ssh/id_rsa`) and a public key (`~/.ssh/id_rsa.pub`).  **Important:**  Keep the private key secure.  You will need it to connect to the EC2 instance.  The public key will       be associated with the instance via the `key_name_value` variable.
 
