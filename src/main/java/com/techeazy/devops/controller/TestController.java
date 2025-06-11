@@ -10,4 +10,9 @@ public class TestController {
     public  String test() {
         return "Successfully Deployed";
     }
+
+    @GetMapping
+    public  String testPR() {
+        return "testing pull request demo";
+    }
 }
