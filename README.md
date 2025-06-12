@@ -48,6 +48,8 @@ Before you begin, ensure you have the following:
 
 NOTE:- add credentials in terraform.tfvars or dec.tfvars or prod.tfvars file.
     task of passing different stage through variables is not completed so use "terraform.tfvars" only
+
+
 5.  **Create Terraform Workspaces (Dev/Prod):**
 
     ```bash
