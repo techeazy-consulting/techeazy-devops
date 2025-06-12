@@ -6,13 +6,12 @@ resource "aws_instance" "example1" {
     ami = var.ami_value
     instance_type = var.instance_type_value
     vpc_security_group_ids = [aws_security_group.mysg.id]
-    iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name # Attach the instance profile
+    iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name 
     user_data = base64encode(templatefile("./script.sh", {
     repo_url     = var.repo_url_value
     java_version = var.java_version_value
     repo_dir_name= var.repo_dir_name
     stop_after_minutes = var.stop_after_minutes
-    # Pass the AWS credentials to the user_data script
     aws_access_key_id    = var.aws_access_key_id
     aws_secret_access_key = var.aws_secret_access_key
     aws_default_region   = var.aws_default_region
@@ -64,7 +63,7 @@ resource "aws_security_group" "mysg" {
 }
 
 resource "aws_s3_bucket" "example" {
-  bucket = var.s3_bucket_name # Use the variable for the bucket name
+  bucket = var.s3_bucket_name 
 
   tags = {
     Name        = "My bucket"
@@ -89,11 +88,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
   }
 }
 
-# --- IAM Role for Read-Only S3 Access ---
 resource "aws_iam_role" "s3_read_only_role" {
   name = "s3_read_only_access_role"
 
-  # Defines who can assume this role. Here, EC2 instances can assume it.
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -102,7 +99,7 @@ resource "aws_iam_role" "s3_read_only_role" {
         Effect = "Allow"
         Sid    = ""
         Principal = {
-          Service = "ec2.amazonaws.com" # Allows EC2 instances to assume this role. Adjust as needed.
+          Service = "ec2.amazonaws.com" 
         }
       },
     ]
@@ -124,26 +121,23 @@ resource "aws_iam_policy" "s3_read_only_policy" {
       {
         Effect   = "Allow"
         Action   = [
-          "s3:Get*",  # Allows GetObject, GetBucketLocation, etc.
-          "s3:List*", # Allows ListBucket, ListAllMyBuckets, etc.
+          "s3:Get*",  
+          "s3:List*", 
         ]
-        Resource = "*" # Apply to all S3 resources
+        Resource = "*" 
       },
     ]
   })
 }
 
-# Attach Read-Only S3 Policy to the Role
 resource "aws_iam_role_policy_attachment" "s3_read_only_attachment" {
   role       = aws_iam_role.s3_read_only_role.name
   policy_arn = aws_iam_policy.s3_read_only_policy.arn
 }
 
-# --- IAM Role for S3 Bucket Creation and File Upload (No Read/Download) ---
 resource "aws_iam_role" "s3_creator_uploader_role" {
   name = "s3_creator_uploader_access_role"
 
-  # Defines who can assume this role. Here, EC2 instances can assume it.
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -152,7 +146,7 @@ resource "aws_iam_role" "s3_creator_uploader_role" {
         Effect = "Allow"
         Sid    = ""
         Principal = {
-          Service = "ec2.amazonaws.com" # Allows EC2 instances to assume this role. Adjust as needed.
+          Service = "ec2.amazonaws.com" 
         }
       },
     ]
@@ -163,7 +157,6 @@ resource "aws_iam_role" "s3_creator_uploader_role" {
   }
 }
 
-# IAM Policy for S3 Bucket Creation and File Upload (Explicitly No Read/Download)
 resource "aws_iam_policy" "s3_creator_uploader_policy" {
   name        = "s3_creator_uploader_policy"
   description = "Provides permissions to create S3 buckets and upload objects, explicitly denying read/download"
@@ -174,19 +167,19 @@ resource "aws_iam_policy" "s3_creator_uploader_policy" {
       {
         Effect   = "Allow"
         Action   = [
-          "s3:CreateBucket", # Allows creating new buckets
-          "s3:PutObject",    # Allows uploading objects
-          "s3:PutObjectAcl", # Allows setting ACLs on uploaded objects (often needed with PutObject)
+          "s3:CreateBucket", 
+          "s3:PutObject",    
+          "s3:PutObjectAcl", 
         ]
-        Resource = "*" # Apply to all S3 resources
+        Resource = "*" 
       },
       {
-        Effect   = "Deny"     # Explicitly deny read and list actions
+        Effect   = "Deny"     
         Action   = [
-          "s3:Get*",  # Denies GetObject, GetBucketLocation, etc.
-          "s3:List*", # Denies ListBucket, ListAllMyBuckets, etc.
+          "s3:Get*",  
+          "s3:List*", 
         ]
-        Resource = "*" # Apply to all S3 resources
+        Resource = "*" 
       },
     ]
   })
