@@ -46,7 +46,8 @@ Before you begin, ensure you have the following:
 
     This will create a private key (`~/.ssh/id_rsa`) and a public key (`~/.ssh/id_rsa.pub`).  **Important:**  Keep the private key secure.  You will need it to connect to the EC2 instance.  The public key will       be associated with the instance via the `key_name_value` variable.
 
-
+NOTE:- add credentials in terraform.tfvars or dec.tfvars or prod.tfvars file.
+    task of passing different stage through variables is not completed so use "terraform.tfvars" only
 5.  **Create Terraform Workspaces (Dev/Prod):**
 
     ```bash
