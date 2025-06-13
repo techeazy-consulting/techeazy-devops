@@ -14,6 +14,10 @@ resource "aws_instance" "example1" {
     stop_after_minutes = var.stop_after_minutes
     s3_bucket_name = var.s3_bucket_name
   }))
+
+  depends_on = [
+    aws_s3_bucket.example
+  ]
 }
 
 
