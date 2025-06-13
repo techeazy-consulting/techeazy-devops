@@ -14,3 +14,4 @@ aws_access_key_id     = aws-access-key-id # Replace with your actual AWS Access 
 aws_secret_access_key = aws-secret-access-key # Replace with your actual AWS Secret Access Key
 aws_default_region    = "us-east-1" 
 aws_output_format     = "json" 
+
