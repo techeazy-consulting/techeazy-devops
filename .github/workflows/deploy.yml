@@ -36,3 +36,4 @@ jobs:
       - name: Validate app health
         run: |
           curl -f http://$(terraform output -raw ec2_public_ip):80
+
