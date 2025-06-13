@@ -29,7 +29,6 @@ jobs:
         run: |
           echo "environment = \"${{ steps.get-environment.outputs.environment }}\"" > terraform.tfvars
           terraform init
-           terraform apply -auto-approve
         working-directory: ./terraform
    
       - name: Validate app health
