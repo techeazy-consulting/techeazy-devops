@@ -4,13 +4,7 @@ on:
   push:
     branches:
       - assignment-3
-    tags:
-      - 'deploy-*'
-  workflow_dispatch:
-    inputs:
-      stage:
-        description: 'Stage to deploy to (e.g., dev, prod)'
-
+ 
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -34,8 +28,8 @@ jobs:
       - name: Apply Terraform configuration
         run: |
           terraform init
-          #terraform apply -var-file=${{ github.event.inputs.stage }}.tfvars --auto-approve
-          terraform apply -var-file=${{ github.event.inputs.stage && format('{0}.tfvars', github.event.inputs.stage) || 'terraform.tfvars' }} --auto-approve
+          #terraform apply --auto-approve
+
         working-directory: ./terraform        
    
       - name: Validate app health
