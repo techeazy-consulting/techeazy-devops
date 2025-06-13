@@ -52,7 +52,17 @@ variable "stop_after_minutes" {
     default     = 5
 }
 
+variable "aws_access_key_id" {
+  description = "AWS Access Key ID for the IAM user (DANGEROUS: For assignment only, not for production!)"
+  type        = string
+  sensitive   = true # Mark as sensitive
+}
 
+variable "aws_secret_access_key" {
+  description = "AWS Secret Access Key for the IAM user (DANGEROUS: For assignment only, not for production!)"
+  type        = string
+  sensitive   = true # Mark as sensitive
+}
 
 variable "aws_default_region" {
   description = "Default AWS region for CLI configuration"
@@ -70,10 +80,4 @@ variable "s3_bucket_name" {
   description = "Default AWS region for CLI configuration"
   type        = string
   default     = "bucket-for-logs-1234567890" # Replace with your desired bucket name
-}
-
-variable "environment" {
-  description = "Default AWS region for CLI configuration"
-  type        = string
-  default     = "dev" # Replace with your desired bucket name
 }
