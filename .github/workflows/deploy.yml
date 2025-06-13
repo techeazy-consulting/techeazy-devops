@@ -32,6 +32,7 @@ jobs:
           terraform init
           terraform plan
         working-directory: ./terraform
+        
    
       - name: Validate app health
         run: |
