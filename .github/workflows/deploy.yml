@@ -22,12 +22,6 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-output: json
 
-      - name: Get environment from tag
-        id: get-environment
-        run: |
-          ENVIRONMENT=$(echo ${GITHUB_REF#refs/*/} | cut -d '-' -f 2)
-          echo "::set-output name=environment::$ENVIRONMENT"
-
       - name: Initialize Terraform
         uses: hashicorp/setup-terraform@v1
         with:
@@ -35,14 +29,9 @@ jobs:
 
       - name: Apply Terraform configuration
         run: |
-          echo "environment = \"${{ steps.get-environment.outputs.environment }}\"" > terraform.tfvars
           terraform init
           terraform plan
         working-directory: ./terraform
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
    
       - name: Validate app health
         run: |
