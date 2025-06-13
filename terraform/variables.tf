@@ -71,3 +71,9 @@ variable "s3_bucket_name" {
   type        = string
   default     = "bucket-for-logs-1234567890" # Replace with your desired bucket name
 }
+
+variable "environment" {
+  description = "Default AWS region for CLI configuration"
+  type        = string
+  default     = "dev" # Replace with your desired bucket name
+}
