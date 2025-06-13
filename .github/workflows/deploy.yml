@@ -1,0 +1,24 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'deploy-*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Initialize Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: '1.2.3'
+
+      - name: Apply Terraform configuration
+        run: |
+          terraform init
