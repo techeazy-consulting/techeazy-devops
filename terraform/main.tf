@@ -12,10 +12,10 @@ resource "aws_instance" "example1" {
     java_version = var.java_version_value
     repo_dir_name= var.repo_dir_name
     stop_after_minutes = var.stop_after_minutes
-    aws_access_key_id    = var.aws_access_key_id
-    aws_secret_access_key = var.aws_secret_access_key
-    aws_default_region   = var.aws_default_region
-    aws_output_format    = var.aws_output_format
+    #aws_access_key_id    = var.aws_access_key_id #< -- not recommended
+    #aws_secret_access_key = var.aws_secret_access_key
+    #aws_default_region   = var.aws_default_region
+    #aws_output_format    = var.aws_output_format
     s3_bucket_name = var.s3_bucket_name
   }))
 }
