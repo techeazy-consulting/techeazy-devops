@@ -1,0 +1,35 @@
+name: Deploy Infrastructure and App
+
+on:
+  push:
+    branches: [main]
+    tags: ["deploy-dev", "deploy-prod"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Terraform Init & Apply
+        run: |
+          cd devops-anurag/assignment-1-2
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Validate Application
+        run: |
+          INSTANCE_IP=$(aws ec2 describe-instances --filters Name=tag:Name,Values=DevOps-dev-EC2 --query "Reservations[*].Instances[*].PublicIpAddress" --output text --region ap-south-1)
+          curl -f http://$INSTANCE_IP:80 || exit 1
