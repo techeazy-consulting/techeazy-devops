@@ -15,3 +15,4 @@ aws_secret_access_key = "your_secret_access_key_id" # Replace with your actual A
 aws_default_region    = "us-east-1" 
 aws_output_format     = "json" 
 environment = "dev"
+
