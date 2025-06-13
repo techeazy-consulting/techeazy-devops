@@ -6,6 +6,6 @@ repo_dir_name = "techeazy-devops"
 java_version_value = "openjdk-21-jdk-headless"
 aws_region = "us-east-1"
 stop_after_minutes   = 10
-s3_bucket_name = "bucket-4254"
+s3_bucket_name = "bucket-4254-sumit-009"
 
 
