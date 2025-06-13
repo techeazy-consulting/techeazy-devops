@@ -8,12 +8,11 @@ This project demonstrates the deployment of an application to an AWS EC2 instanc
 * `.github/workflows/`: Contains GitHub Actions workflow files for automating deployment
 
 ## How to Use
-1. **Clone the repository**: `git clone https://github.com/your-repo-url.git`
-2. **Configure AWS credentials**: Set up your AWS credentials as secrets in your GitHub repository settings.
-3. **Trigger the workflow**: Push changes to the `assignment-3` branch or trigger the workflow manually using the GitHub Actions UI.
+1. **Configure AWS credentials**: Set up your AWS credentials as secrets in your GitHub repository settings.
+2. **Trigger the workflow**: Push changes to the `assignment-3` branch or trigger the workflow manually using the GitHub Actions UI.
 
 ## Workflow Details
-The GitHub Actions workflow is defined in `.github/workflows/deploy-to-ec2.yml`. It performs the following steps:
+The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It performs the following steps:
 
 1. **Checkout code**: Checks out the code in the repository.
 2. **Configure AWS credentials**: Configures AWS credentials using secrets stored in the repository.
@@ -28,3 +27,6 @@ The GitHub Actions workflow is defined in `.github/workflows/deploy-to-ec2.yml`.
 ## Submission
 This project is submitted as part of Assignment 3. Please review the project requirements and ensure that all necessary components are included.
 
+## Future/incomplete work
+* Passing stage parameter via Github input
+* Validate health check stage is not working properly so you  can test the application manually, but you have to wait 2-3 minutes to application get started.
