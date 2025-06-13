@@ -2,6 +2,8 @@ name: Deploy to EC2
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'deploy-*'
 
@@ -12,6 +14,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Get environment from tag
+        id: get-environment
+        run: |
+          ENVIRONMENT=$(echo ${GITHUB_REF#refs/*/} | cut -d '-' -f 2)
+          echo "::set-output name=environment::$ENVIRONMENT"
+
       - name: Initialize Terraform
         uses: hashicorp/setup-terraform@v1
         with:
@@ -19,6 +27,5 @@ jobs:
 
       - name: Apply Terraform configuration
         run: |
+          echo "environment = \"${{ steps.get-environment.outputs.environment }}\"" > terraform.tfvars
           terraform init
-          terraform apply -auto-approve
-          curl -f http://$(terraform output -raw ec2_public_ip):80
