@@ -55,7 +55,6 @@ variable "stop_after_minutes" {
 variable "aws_access_key_id" {
   description = "AWS Access Key ID for the IAM user (DANGEROUS: For assignment only, not for production!)"
   type        = string
-  sensitive   = true # Mark as sensitive
 }
 
 variable "s3_bucket_name" {
