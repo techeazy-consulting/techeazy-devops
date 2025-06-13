@@ -15,12 +15,12 @@ resource "aws_instance" "example1" {
     s3_bucket_name = var.s3_bucket_name
   }))
 
-  depends_on = [
+/*  depends_on = [
     aws_s3_bucket.example
-  ]
+  ]*/
 }
 
-
+/*
 
 resource "aws_security_group" "mysg" {
   name = "webig"
@@ -196,3 +196,4 @@ resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
   }
 }
 
+*/
