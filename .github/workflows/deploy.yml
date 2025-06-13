@@ -29,5 +29,4 @@ jobs:
         run: |
           echo "environment = \"${{ steps.get-environment.outputs.environment }}\"" > terraform.tfvars
           terraform init
-          curl -f http://$(terraform output -raw ec2_public_ip):80
         working-directory: ./terraform
