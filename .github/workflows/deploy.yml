@@ -31,9 +31,7 @@ jobs:
           terraform init
            terraform apply -auto-approve
         working-directory: ./terraform
-        env: # <--- ADD THIS BLOCK
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+       
 
       - name: Validate app health
         run: |
