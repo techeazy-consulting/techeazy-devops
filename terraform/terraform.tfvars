@@ -13,5 +13,4 @@ s3_bucket_name = "bucket-4254"
 
 aws_default_region    = "us-east-1" 
 aws_output_format     = "json" 
-environment = "dev"
 
