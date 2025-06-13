@@ -14,4 +14,4 @@ aws_access_key_id     = "your_access_key_id" # Replace with your actual AWS Acce
 aws_secret_access_key = "your_secret_access_key_id" # Replace with your actual AWS Secret Access Key
 aws_default_region    = "us-east-1" 
 aws_output_format     = "json" 
-deploy = "dev"
+deploy = "deploy-dev"
