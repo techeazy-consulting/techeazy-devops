@@ -184,7 +184,7 @@ resource "aws_iam_role_policy_attachment" "s3_creator_uploader_attachment" {
 # --- IAM Instance Profile for S3 Creator/Uploader Role ---
 # An instance profile is required to attach an IAM role to an EC2 instance.
 resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
-  name = "s3_creator_uploader_instance_profile"
+  name_prefix = "s3-creator-uploader-profile"
   role = aws_iam_role.s3_creator_uploader_role.name # Reference the role created above
 
   tags = {
