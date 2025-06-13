@@ -52,11 +52,6 @@ variable "stop_after_minutes" {
     default     = 5
 }
 
-variable "aws_access_key_id" {
-  description = "AWS Access Key ID for the IAM user (DANGEROUS: For assignment only, not for production!)"
-  type        = string
-}
-
 variable "s3_bucket_name" {
   description = "Default AWS region for CLI configuration"
   type        = string
