@@ -195,3 +195,4 @@ resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
     Name = "S3CreatorUploaderInstanceProfile"
   }
 }
+
