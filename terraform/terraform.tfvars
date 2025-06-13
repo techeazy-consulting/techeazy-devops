@@ -10,8 +10,8 @@ s3_bucket_name = "bucket-4254"
 
 
 # AWS Credentials (for assignment ONLY - highly insecure for production!)
-aws_access_key_id     = ${{ secrets.AWS_ACCESS_KEY_ID }} # Replace with your actual AWS Access Key ID
-aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Replace with your actual AWS Secret Access Key
+# aws_access_key_id     = AWS_ACCESS_KEY_ID }} # Replace with your actual AWS Access Key ID
+# aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Replace with your actual AWS Secret Access Key
 aws_default_region    = "us-east-1" 
 aws_output_format     = "json" 
 environment = "dev"
