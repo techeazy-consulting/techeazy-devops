@@ -58,24 +58,6 @@ variable "aws_access_key_id" {
   sensitive   = true # Mark as sensitive
 }
 
-variable "aws_secret_access_key" {
-  description = "AWS Secret Access Key for the IAM user (DANGEROUS: For assignment only, not for production!)"
-  type        = string
-  sensitive   = true # Mark as sensitive
-}
-
-variable "aws_default_region" {
-  description = "Default AWS region for CLI configuration"
-  type        = string
-  default     = "us-east-1" # Or your desired default region
-}
-
-variable "aws_output_format" {
-  description = "Default AWS region for CLI configuration"
-  type        = string
-  default     = "json" # Or your desired default region
-}
-
 variable "s3_bucket_name" {
   description = "Default AWS region for CLI configuration"
   type        = string
