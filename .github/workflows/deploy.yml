@@ -28,14 +28,11 @@ jobs:
       - name: Apply Terraform configuration
         run: |
           terraform init
-          #terraform apply --auto-approve
-
+          terraform apply --auto-approve
+          sleep 180
+          curl -f http://$(terraform output -raw ec2_public_ip):80
         working-directory: ./terraform        
    
-      - name: Validate app health
-        run: |
-          curl -f http://$(terraform output -raw ec2_public_ip):80
-
       - name: Apply destroy configuration
         run: |
           terraform destroy --auto-approve
