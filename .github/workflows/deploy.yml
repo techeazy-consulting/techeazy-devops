@@ -31,15 +31,10 @@ jobs:
           terraform apply --auto-approve
         working-directory: ./terraform   
 
-      - name: Get public IP
-        run: |
-          terraform output -raw public-ip-address > ip.txt
-          echo "EC2_PUBLIC_IP=$(cat ip.txt)" >> $GITHUB_ENV
-        working-directory: ./terraform
-
       - name: Validate app health
         run: |
           sleep 180
+          EC2_PUBLIC_IP = aws ec2 describe-instances --filters "Name=tag:Name,Values=example1" --query 'Reservations[].Instances[].PublicIpAddress' --output text
           curl -f http://$EC2_PUBLIC_IP:80
    
       - name: Apply destroy configuration
