@@ -5,11 +5,6 @@ JAVA_VERSION="${java_version}"
 REPO_DIR_NAME="${repo_dir_name}"
 STOP_INSTANCE="${stop_after_minutes}"
 
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-sudo apt install unzip -y
-unzip awscliv2.zip
-sudo ./aws/install
-
 git clone "$REPO_URL"
 sudo apt update  
 sudo apt install "$JAVA_VERSION" -y
