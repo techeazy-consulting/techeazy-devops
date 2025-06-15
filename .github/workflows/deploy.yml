@@ -29,13 +29,16 @@ jobs:
         run: |
           terraform init
           terraform apply --auto-approve
-          echo "EC2_PUBLIC_IP=$(terraform output -raw public-ip-address)" >> $GITHUB_ENV
         working-directory: ./terraform   
+
+      - name: Get public IP
+        run: |
+          echo "EC2_PUBLIC_IP=$(terraform output -raw public-ip-address)" >> $GITHUB_ENV
+        working-directory: ./terraform
 
       - name: Validate app health
         run: |
           sleep 180
-          
           curl -f http://$EC2_PUBLIC_IP:80
    
       - name: Apply destroy configuration
