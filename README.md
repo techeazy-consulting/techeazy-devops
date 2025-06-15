@@ -19,6 +19,7 @@ The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It per
 3. **Initialize Terraform**: Initializes Terraform in the `terraform/` directory.
 4. **Apply Terraform configuration**: Applies the Terraform configuration to deploy to EC2.
 5. **Validate app health**: Validates the health of the application by sending a request to the EC2 instance.
+6. **Destroy Infrastructure** Destroys the infrastrucure.
 
 ## Troubleshooting
 * Check the GitHub Actions logs for errors or issues during deployment.
@@ -29,4 +30,3 @@ This project is submitted as part of Assignment 3. Please review the project req
 
 ## Future/incomplete work
 * Passing stage parameter via Github input
-* Validate health check stage is not working properly so you  can test the application manually, but you have to wait 2-3 minutes to application get started.
