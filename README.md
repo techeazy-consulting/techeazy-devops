@@ -30,3 +30,4 @@ This project is submitted as part of Assignment 3. Please review the project req
 
 ## Future/incomplete work
 * Passing stage parameter via Github input
+* Terrform file gets lost.
