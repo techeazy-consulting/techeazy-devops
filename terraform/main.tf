@@ -16,6 +16,10 @@ resource "aws_instance" "example1" {
     s3_bucket_name = var.s3_bucket_name
   }))
 
+  tags = {
+    Name = "MyInstance"
+  }
+
 #  depends_on = [
 #    aws_s3_bucket.example
 #  ]
