@@ -39,7 +39,7 @@ jobs:
    
       - name: Apply destroy configuration
         run: |
-          sleep 200
+          sleep 100
           terraform destroy --auto-approve
         working-directory: ./terraform
-        if: ${{ always() }}
+        if: ${{ steps.terraform_apply.outcome == 'success' }}
