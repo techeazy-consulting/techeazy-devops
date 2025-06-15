@@ -29,6 +29,7 @@ jobs:
         run: |
           terraform init
           terraform apply --auto-approve
+          EC2_PUBLIC_IP = output.instance_details.public_ip_address
         working-directory: ./terraform   
 
       - name: Validate app health
