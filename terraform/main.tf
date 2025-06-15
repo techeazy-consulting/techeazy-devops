@@ -7,7 +7,7 @@ resource "aws_instance" "example1" {
     ami = var.ami_value
     instance_type = var.instance_type_value
     vpc_security_group_ids = [aws_security_group.mysg.id]
-#    iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name 
+    iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name 
     user_data = base64encode(templatefile("./script.sh", {
     repo_url     = var.repo_url_value
     java_version = var.java_version_value
@@ -20,9 +20,9 @@ resource "aws_instance" "example1" {
     Name = "MyInstance"
   }
 
-#  depends_on = [
-#    aws_s3_bucket.example
-#  ]
+  depends_on = [
+    aws_s3_bucket.example
+  ]
 }
 
 
@@ -61,7 +61,6 @@ resource "aws_security_group" "mysg" {
   
 }
 
-/*
 resource "aws_s3_bucket" "example" {
   bucket = var.s3_bucket_name 
 
@@ -202,4 +201,3 @@ resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
   }
 }
 
-*/
