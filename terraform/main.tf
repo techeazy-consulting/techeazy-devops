@@ -6,7 +6,7 @@ resource "aws_instance" "example1" {
     ami = var.ami_value
     instance_type = var.instance_type_value
     vpc_security_group_ids = [aws_security_group.mysg.id]
- #   iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name 
+    iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name 
     user_data = base64encode(templatefile("./script.sh", {
     repo_url     = var.repo_url_value
     java_version = var.java_version_value
@@ -86,53 +86,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
   }
 }
 
-/*
-resource "aws_iam_role" "s3_read_only_role" {
-  name = "s3_read_only_access_role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Sid    = ""
-        Principal = {
-          Service = "ec2.amazonaws.com" 
-        }
-      },
-    ]
-  })
-
-  tags = {
-    Name = "S3ReadOnlyRole"
-  }
-}
-
-# IAM Policy for Read-Only S3 Access
-resource "aws_iam_policy" "s3_read_only_policy" {
-  name        = "s3_read_only_policy"
-  description = "Provides read-only access to S3 buckets and objects"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = [
-          "s3:Get*",  
-          "s3:List*", 
-        ]
-        Resource = "*" 
-      },
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "s3_read_only_attachment" {
-  role       = aws_iam_role.s3_read_only_role.name
-  policy_arn = aws_iam_policy.s3_read_only_policy.arn
-}
 
 resource "aws_iam_role" "s3_creator_uploader_role" {
   name = "s3_creator_uploader_access_role"
@@ -200,5 +153,3 @@ resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
     Name = "S3CreatorUploaderInstanceProfile"
   }
 }
-
-*/
