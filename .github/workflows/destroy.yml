@@ -8,7 +8,7 @@ on:
       - assignment-3
 
 jobs:
-  deploy:
+  destroy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
