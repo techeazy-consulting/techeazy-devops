@@ -19,5 +19,5 @@ jobs:
       - name: Apply destroy configuration
         run: |
           terraform destroy --auto-approve
-        working-directory: ./
+        working-directory: ./terraform
 
