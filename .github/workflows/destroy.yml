@@ -3,7 +3,7 @@ name: destroy the infrastructure
 on:
   push:
     paths:
-      - '.github/workflowsdestroy.yml'       # Trigger when files current file edited change
+      - '.github/workflows/destroy.yml'       # Trigger when files current file edited change
 
 jobs:
   deploy:
