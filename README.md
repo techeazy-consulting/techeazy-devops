@@ -22,7 +22,7 @@ This project demonstrates the deployment of an application to an AWS EC2 instanc
     - to save cost the ec2 instance will be stopped after 10 mins as we specify in terraform.tfvars
 
 
-2. **desroy the infrastructure**
+2. **Destroy the infrastructure**
     - to destroy the infrastructure we have to commit on "github/workflows/destroy.yml" file.
     - it will trigger the workflow to destroy the infrastructure.
 
@@ -37,13 +37,5 @@ The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It per
 5. **Validate app health**: Validates the health of the application by sending a request to the EC2 instance.
 6. **Destroy Infrastructure** Destroys the infrastrucure.
 
-## Troubleshooting
-* Check the GitHub Actions logs for errors or issues during deployment.
-* Verify that your AWS credentials are set up correctly as secrets in your repository settings.
-
-## Submission
-This project is submitted as part of Assignment 3. Please review the project requirements and ensure that all necessary components are included.
-
 ## Future/incomplete work
 * Passing stage parameter via Github input
-* Terrform file gets lost.
