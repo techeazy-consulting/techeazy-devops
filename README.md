@@ -1,5 +1,9 @@
 # Assignment 3: Deploying to EC2 using Terraform and GitHub Actions
 
+## Prerequisite
+aws access_key_id and secret access_key_id configured in github secrets.
+one s3 bucket already created to use it to store terraform.tfstate file.
+
 ## Project Overview
 This project demonstrates the deployment of an application to an AWS EC2 instance using Terraform and GitHub Actions.
 
