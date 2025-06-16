@@ -2,8 +2,8 @@ name: Deploy to EC2
 
 on:
   push:
-    branches:
-      - assignment-3
+    paths:
+      - 'terraform/**' 
  
 jobs:
   deploy:
