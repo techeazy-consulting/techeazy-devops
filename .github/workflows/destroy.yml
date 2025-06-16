@@ -3,7 +3,7 @@ name: destroy the infrastructure
 on:
   push:
     paths:
-      - '.github/workflows/destroy.yml'       # Trigger when files current file edited change
+      - '.github/workflows/destroy.yml'
     branches:
       - assignment-3
 
@@ -11,6 +11,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-output: json
+
       - name: Initialize Terraform
         uses: hashicorp/setup-terraform@v1
         with:
@@ -20,5 +28,4 @@ jobs:
         run: |
           terraform init
           terraform destroy --auto-approve
-        working-directory: ./
-
+        working-directory: ./terraform
