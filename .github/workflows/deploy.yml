@@ -36,10 +36,4 @@ jobs:
           EC2_PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
           sleep 120
           curl -f http://$EC2_PUBLIC_IP:80
-   
-      - name: Apply destroy configuration
-        run: |
-          sleep 100
-          terraform destroy --auto-approve
-        working-directory: ./terraform
-        if: ${{ steps.terraform_apply.outcome == 'success' }}
+
