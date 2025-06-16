@@ -8,4 +8,3 @@ aws_region = "us-east-1"
 stop_after_minutes   = 10
 s3_bucket_name = "bucket-4254"
 
-
