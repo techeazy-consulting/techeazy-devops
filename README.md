@@ -12,8 +12,8 @@ This project demonstrates the deployment of an application to an AWS EC2 instanc
 * `.github/workflows/`: Contains GitHub Actions workflow files for automating deployment
 
 ## How to Use
-1. Any commit on terraform file will trigger the workflow to create infrastructure on terraform
-  workflow:
+1. **Any commit on terraform file will trigger the workflow to create infrastructure on terraform
+  workflow:**
     - creates infrastructure:- ec2,s3, security group, iam instance profile,iam role,iam policy.
     - the terraform state file will be located at the s3 bucket we already created, you have to mention it on backend.tf
     - the script will deploy the application on ec2, application will be accesssible via port 80.
@@ -22,12 +22,10 @@ This project demonstrates the deployment of an application to an AWS EC2 instanc
     - to save cost the ec2 instance will be stopped after 10 mins as we specify in terraform.tfvars
 
 
-2. desroy the infrastructure
-  - to destroy the infrastructure we have to commit on "github/workflows/destroy.yml" file.
-  - it will trigger the workflow to destroy the infrastructure.
+2. **desroy the infrastructure**
+    - to destroy the infrastructure we have to commit on "github/workflows/destroy.yml" file.
+    - it will trigger the workflow to destroy the infrastructure.
 
-1. **Configure AWS credentials**: Set up your AWS credentials as secrets in your GitHub repository settings.
-2. **Trigger the workflow**: Push changes to the `assignment-3` branch or trigger the workflow manually using the GitHub Actions UI.
 
 ## Workflow Details
 The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It performs the following steps:
