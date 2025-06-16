@@ -1,0 +1,15 @@
+name: destroy the infrastructure
+
+on:
+  push:
+    paths:
+      - '.github/workflowsdestroy.yml'       # Trigger when files current file edited change
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply destroy configuration
+        run: |
+          terraform destroy --auto-approve
+        working-directory: ./terraform
