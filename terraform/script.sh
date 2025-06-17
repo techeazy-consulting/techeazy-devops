@@ -5,20 +5,6 @@ JAVA_VERSION="${java_version}"
 REPO_DIR_NAME="${repo_dir_name}"
 STOP_INSTANCE="${stop_after_minutes}"
 
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-sudo apt install unzip -y
-unzip awscliv2.zip
-sudo ./aws/install
-
-echo "Configuring AWS CLI for the root user..."
-
-# AWS CLI will configure for the user running this script (which is root).
-# Configuration files will be created in /root/.aws/
-aws configure set aws_access_key_id "${aws_access_key_id}"
-aws configure set aws_secret_access_key "${aws_secret_access_key}"
-aws configure set default.region "${aws_default_region}"
-aws configure set default.output json
-
 git clone "$REPO_URL"
 sudo apt update  
 sudo apt install "$JAVA_VERSION" -y

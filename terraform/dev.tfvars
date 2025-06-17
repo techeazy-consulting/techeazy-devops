@@ -7,8 +7,3 @@ java_version_value = "openjdk-21-jdk-headless"
 aws_region = "us-east-1"
 stop_after_minutes   = 2
 
-# AWS Credentials (for assignment ONLY - highly insecure for production!)
-aws_access_key_id     = "your_access_key_id" # Replace with your actual AWS Access Key ID
-aws_secret_access_key = "your_secret_access_key_id" # Replace with your actual AWS Secret Access Key
-aws_default_region    = "ap-south-1" # Example: Mumbai region
-aws_output_format     = "json" # Example: JSON output formatt

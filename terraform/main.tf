@@ -2,6 +2,7 @@ provider "aws" {
   region = var.aws_region
 }
 
+
 resource "aws_instance" "example1" {
     ami = var.ami_value
     instance_type = var.instance_type_value
@@ -12,18 +13,16 @@ resource "aws_instance" "example1" {
     java_version = var.java_version_value
     repo_dir_name= var.repo_dir_name
     stop_after_minutes = var.stop_after_minutes
-    aws_access_key_id    = var.aws_access_key_id
-    aws_secret_access_key = var.aws_secret_access_key
-    aws_default_region   = var.aws_default_region
-    aws_output_format    = var.aws_output_format
     s3_bucket_name = var.s3_bucket_name
   }))
-  connection {
-    type        = "ssh"
-    user        = "ubuntu"  # Replace with the appropriate username for your EC2 instance
-    private_key = file("~/.ssh/id_rsa")  # Replace with the path to your private key
-    host        = self.public_ip
+
+  tags = {
+    Name = "MyInstance"
   }
+
+  depends_on = [
+    aws_s3_bucket.example
+  ]
 }
 
 
@@ -88,52 +87,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
   }
 }
 
-resource "aws_iam_role" "s3_read_only_role" {
-  name = "s3_read_only_access_role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Sid    = ""
-        Principal = {
-          Service = "ec2.amazonaws.com" 
-        }
-      },
-    ]
-  })
-
-  tags = {
-    Name = "S3ReadOnlyRole"
-  }
-}
-
-# IAM Policy for Read-Only S3 Access
-resource "aws_iam_policy" "s3_read_only_policy" {
-  name        = "s3_read_only_policy"
-  description = "Provides read-only access to S3 buckets and objects"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = [
-          "s3:Get*",  
-          "s3:List*", 
-        ]
-        Resource = "*" 
-      },
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "s3_read_only_attachment" {
-  role       = aws_iam_role.s3_read_only_role.name
-  policy_arn = aws_iam_policy.s3_read_only_policy.arn
-}
 
 resource "aws_iam_role" "s3_creator_uploader_role" {
   name = "s3_creator_uploader_access_role"
@@ -194,7 +147,7 @@ resource "aws_iam_role_policy_attachment" "s3_creator_uploader_attachment" {
 # --- IAM Instance Profile for S3 Creator/Uploader Role ---
 # An instance profile is required to attach an IAM role to an EC2 instance.
 resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
-  name = "s3_creator_uploader_instance_profile"
+  name_prefix = "s3-creator-uploader-profile"
   role = aws_iam_role.s3_creator_uploader_role.name # Reference the role created above
 
   tags = {
