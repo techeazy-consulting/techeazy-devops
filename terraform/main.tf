@@ -8,12 +8,13 @@ resource "aws_instance" "example1" {
     instance_type = var.instance_type_value
     vpc_security_group_ids = [aws_security_group.mysg.id]
     iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name 
-    user_data = base64encode(templatefile("./script.sh", {
+    user_data = base64encode(templatefile("./${var.stage}_script.sh", {
     repo_url     = var.repo_url_value
     java_version = var.java_version_value
     repo_dir_name= var.repo_dir_name
     stop_after_minutes = var.stop_after_minutes
     s3_bucket_name = var.s3_bucket_name
+    stage  = var.stage
   }))
 
   tags = {
@@ -35,6 +36,13 @@ resource "aws_security_group" "mysg" {
     from_port = 80
     to_port = 80
     protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
