@@ -1,14 +1,28 @@
 name: Deploy to EC2
 
 on:
-  push:
-    paths:
-      - 'terraform/**' 
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Deployment stage'
+        required: true
+        default: 'dev'
+        options:
+          - dev
+          - qa
+          - prod 
  
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate input
+        run: |
+          if [[ "${{ github.event.inputs.stage }}" != "dev" && "${{ github.event.inputs.stage }}" != "qa" && "${{ github.event.inputs.stage }}" != "prod" ]]; then
+            echo "Invalid input: ${{ github.event.inputs.stage }}. Please use one of the following: dev, qa, prod."
+            exit 1
+          fi
+          
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -28,7 +42,9 @@ jobs:
       - name: Apply Terraform configuration
         run: |
           terraform init
-          terraform apply --auto-approve
+          VAR_FILE="${{ github.event.inputs.stage }}.tfvars"
+          terraform apply -var-file="$VAR_FILE" --auto-approve \
+          -var "stage=${{ github.event.inputs.stage }}"
         working-directory: ./terraform   
 
       - name: Validate app health
@@ -36,3 +52,4 @@ jobs:
           EC2_PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
           sleep 120
           curl -f http://$EC2_PUBLIC_IP:80
+          curl -f http://$EC2_PUBLIC_IP:8080
