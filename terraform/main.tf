@@ -16,7 +16,7 @@ resource "aws_instance" "example1" {
     STOP_INSTANCE       = var.stop_after_minutes # Match STOP_INSTANCE in script
     S3_BUCKET_NAME      = var.s3_bucket_name     # Match S3_BUCKET_NAME in script
     AWS_REGION_FOR_SCRIPT = var.aws_region       # NEW: Pass the AWS region from your provider config
-    github_token  = var.github_token
+    GITHUB_TOKEN  = var.github_token
   }))
 
   tags = {

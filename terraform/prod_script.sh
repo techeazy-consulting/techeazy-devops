@@ -6,6 +6,7 @@ REPO_DIR_NAME="${REPO_DIR_NAME}"
 STOP_INSTANCE="${STOP_INSTANCE}"
 S3_BUCKET_NAME="${S3_BUCKET_NAME}"          # Corrected: Now matches uppercase from Terraform
 AWS_REGION_FOR_SCRIPT="${AWS_REGION_FOR_SCRIPT}" # NEW: This variable is now correctly received
+GITHUB_TOKEN="${GITHUB_TOKEN}" # NEW: This variable is now correctly received
 
 
 # Install AWS CLI v2 manually
@@ -15,7 +16,7 @@ if ! command -v aws &> /dev/null; then
   sudo ./aws/install
 fi
 
-git clone "$REPO_URL"
+git clone https://${GITHUB_TOKEN}@github.com/sumit-patil-24/Valentine-Day-DevOps-Project-Personal.git
 sudo apt update  
 sudo apt install "$JAVA_VERSION" -y
 apt install maven -y
