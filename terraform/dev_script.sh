@@ -27,7 +27,6 @@ chmod +x mvnw
 nohup $JAVA_HOME/bin/java -jar target/*.jar > app.log 2>&1 &
 
 # --- Upload cloud-init logs to S3 ---
-#echo "Uploading cloud-init-output.log to S3 bucket ${S3_BUCKET_NAME}..."
 # Give cloud-init a moment to finish writing its logs.
 sleep 10
 # Upload the log. The '|| true' prevents the script from exiting if upload fails
