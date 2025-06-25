@@ -48,11 +48,11 @@ jobs:
           VAR_FILE="${{ github.event.inputs.stage }}.tfvars"
           # Check if the var file exists (optional, but good practice)
           if [ ! -f "./terraform/$VAR_FILE" ]; then
-            echo "Error: Variable file $VAR_FILE not found in ./terraform/"
+            echo "Error: Variable file $VAR_FILE not found in ./terraform"
             exit 1
           fi
           terraform apply -var-file="$VAR_FILE" --auto-approve \
-            -var "stage=${{ github.event.inputs.stage }}"
+          -var "stage=${{ github.event.inputs.stage }}"
         working-directory: ./terraform # Ensure this path is correct for your Terraform files
 
 
