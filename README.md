@@ -40,4 +40,5 @@ The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It per
 6. **Destroy Infrastructure** Destroys the infrastrucure.
 
 ## Future/incomplete work
-* Passing stage parameter via Github input
+* GitHub Token Handling
+* Config Separation
