@@ -4,6 +4,7 @@ REPO_URL="${repo_url}"
 JAVA_VERSION="${java_version}"
 REPO_DIR_NAME="${repo_dir_name}"
 STOP_INSTANCE="${stop_after_minutes}"
+S3_BUCKET_NAME="${s3_bucket_name}
 
 # Install AWS CLI v2 manually
 if ! command -v aws &> /dev/null; then
