@@ -45,6 +45,7 @@ jobs:
           # Terraform automatically picks up environment variables prefixed with TF_VAR_
           TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
         run: |
+          terraform init
           VAR_FILE="${{ github.event.inputs.stage }}.tfvars"
           # Check if the var file exists (optional, but good practice)
           if [ ! -f "./terraform/$VAR_FILE" ]; then
