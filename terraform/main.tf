@@ -17,7 +17,7 @@ resource "aws_instance" "example1" {
   }))
 
   tags = {
-    Name = "MyInstance"
+    Name = "MyInstance-${var.stage}"
   }
 
   depends_on = [
