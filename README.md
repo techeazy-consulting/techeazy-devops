@@ -1,7 +1,7 @@
 # Assignment 4: CI/CD  Multi-Stage Deployment
 
 ## Prerequisite
-* Aws access_key_id and secret access_key_id configured in github secrets.
+* 'Aws access_key_id', 'secret access_key_id' and 'github_token" configured in github secrets.
 * One s3 bucket already created to use it to store terraform.tfstate file.
 
 ## Project Overview
