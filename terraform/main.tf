@@ -8,13 +8,14 @@ resource "aws_instance" "example1" {
     instance_type = var.instance_type_value
     vpc_security_group_ids = [aws_security_group.mysg.id]
     iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name 
+
     user_data = base64encode(templatefile("./${var.stage}_script.sh", {
-    repo_url     = var.repo_url_value
-    java_version = var.java_version_value
-    repo_dir_name= var.repo_dir_name
-    stop_after_minutes = var.stop_after_minutes
-    s3_bucket_name = var.s3_bucket_name
-    stage  = var.stage
+    REPO_URL            = var.repo_url_value
+    JAVA_VERSION        = var.java_version_value # Match JAVA_VERSION in script
+    REPO_DIR_NAME       = var.repo_dir_name    # Match REPO_DIR_NAME in script
+    STOP_INSTANCE       = var.stop_after_minutes # Match STOP_INSTANCE in script
+    S3_BUCKET_NAME      = var.s3_bucket_name     # Match S3_BUCKET_NAME in script
+    AWS_REGION_FOR_SCRIPT = var.aws_region       # NEW: Pass the AWS region from your provider config
   }))
 
   tags = {
