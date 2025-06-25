@@ -8,6 +8,7 @@
 This project demonstrates the deployment of an application to an AWS EC2 instance using Terraform and GitHub Actions. It includes CI/CD deployment with different stages. 
 
 ## Directory Structure
+* `.github/workflows`: Contains deploy.yml and destroy.yml file for CI/CD.
 * `terraform/`: Contains Terraform configuration files for deploying to EC2
 * `.github/workflows/`: Contains GitHub Actions workflow files for automating deployment
 
