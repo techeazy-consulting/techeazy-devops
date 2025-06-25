@@ -24,7 +24,7 @@ echo "Uploading cloud-init-output.log to S3 bucket ${S3_BUCKET_NAME}..."
 sleep 10
 # Upload the log. The '|| true' prevents the script from exiting if upload fails
 # (e.g., due to transient S3 issues), allowing the rest of the script to complete.
-aws s3 cp /var/log/cloud-init-output.log "s3://${S3_BUCKET_NAME}/app/logs/cloud-init-output-$(hostname)-$(date +%Y%m%d%H%M%S).log" \
+aws s3 cp /var/log/cloud-init-output.log "s3://${S3_BUCKET_NAME}/app/logs/dev/cloud-init-output-$(hostname)-$(date +%Y%m%d%H%M%S).log" \
     --region "${AWS_REGION_FOR_SCRIPT}" || true # CRITICAL: --region must be here!
 echo "Cloud-init log upload attempted."
 
