@@ -58,6 +58,27 @@ jobs:
         run: |
           VAR_STAGE="${{ github.event.inputs.stage }}"
           EC2_PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance-"$VAR_STAGE"" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
-          sleep 120
-          curl -f http://$EC2_PUBLIC_IP:80
+          echo "--- Waiting 200 seconds for the application to initialize..."
+          sleep 200
+          echo "--- Wait complete. Starting health checks."
+          
+          # 4. Perform the frontend application health check.
+          echo "--- Checking frontend application health on port 8080..."
+          if curl -f --max-time 10 http://$EC2_PUBLIC_IP:8080; then
+            echo "✅ SUCCESS: Frontend application is healthy and responding on port 8080."
+          else
+            echo "❌ FAILURE: Frontend application is not responding or returned an error."
+            exit 1 # Fail the step if the curl command fails.
+          fi
+
+          # 5. Perform the H2 database console health check.
+          echo "--- Checking H2 database console health on /h2-console..."
+          if curl -f --max-time 10 http://$EC2_PUBLIC_IP:8080/h2-console; then
+            echo "✅ SUCCESS: H2 database console is accessible."
+          else
+            echo "⚠️ WARNING: H2 database console is not accessible. This may indicate a database connection issue or misconfiguration."
+          fi
+
+          echo "--- All health checks completed successfully."
+          curl -f http://$EC2_PUBLIC_IP:8080
           curl -f http://$EC2_PUBLIC_IP:8080
