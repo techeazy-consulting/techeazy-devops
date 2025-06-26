@@ -23,6 +23,7 @@ sudo apt install maven -y
 export HOME=/root
 echo "HOME environment variable set to: $HOME"
 
+cd /opt
 git clone "$REPO_URL"
 cd "$REPO_DIR_NAME"
 chmod +x mvnw
