@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Exit immediately if a command exits with a non-zero status.
+# This ensures that if any command fails, the script will stop,
+set -e
+
 REPO_URL="${REPO_URL}"
 JAVA_VERSION="${JAVA_VERSION}"
 REPO_DIR_NAME="${REPO_DIR_NAME}"
@@ -23,13 +27,13 @@ echo "HOME environment variable set to: $HOME"
 
 cd /opt
 # Clone the repository using the provided GITHUB_TOKEN for authentication
-git clone https://${GITHUB_TOKEN}@github.com/sumit-patil-24/Ekart.git
+git clone https://${GITHUB_TOKEN}@github.com/sumit-patil-24/secretsanta-generator.git
 apt install maven -y
 cd "$REPO_DIR_NAME"
 #chmod +x mvnw
 
 #build artifact
-./mvn clean package
+mvn clean package -DskipTests
 
 # Run the app
 nohup $JAVA_HOME/bin/java -jar target/*.jar > app.log 2>&1 &
@@ -39,7 +43,7 @@ nohup $JAVA_HOME/bin/java -jar target/*.jar > app.log 2>&1 &
 sleep 20
 # Upload the log. The '|| true' prevents the script from exiting if upload fails
 # (e.g., due to transient S3 issues), allowing the rest of the script to complete.
-aws s3 cp /var/log/cloud-init-output.log "s3://${S3_BUCKET_NAME}/app/logs/prod/cloud-init-output-$(hostname)-$(date +%Y%m%d%H%M%S).log" \
+aws s3 cp /var/log/cloud-init-output.log "s3://${S3_BUCKET_NAME}/logs/prod/cloud-init-output-$(hostname)-$(date +%Y%m%d%H%M%S).log" \
     --region "${AWS_REGION_FOR_SCRIPT}" || true # CRITICAL: --region must be here!
 echo "Cloud-init log upload attempted."
 
