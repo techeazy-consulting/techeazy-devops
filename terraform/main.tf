@@ -66,7 +66,7 @@ resource "aws_security_group" "mysg" {
   }
 
   tags = {
-    Name = "Web.sg"
+    Name = "Web.sg-${var.stage}"
   }
 
   
@@ -117,7 +117,7 @@ resource "aws_iam_role" "s3_creator_uploader_role" {
   })
 
   tags = {
-    Name = "S3CreatorUploaderRole"
+    Name = "S3CreatorUploaderRole-${var.stage}"
   }
 }
 
@@ -162,6 +162,6 @@ resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
   role = aws_iam_role.s3_creator_uploader_role.name # Reference the role created above
 
   tags = {
-    Name = "S3CreatorUploaderInstanceProfile"
+    Name = "S3CreatorUploaderInstanceProfile-${var.stage}"
   }
 }
