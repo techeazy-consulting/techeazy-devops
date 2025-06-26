@@ -49,14 +49,15 @@ jobs:
           terraform validate
           VAR_FILE="${{ github.event.inputs.stage }}.tfvars"
           terraform apply -var-file="$VAR_FILE" --auto-approve \
-          -var "stage=${{ github.event.inputs.stage }}"
-          -var "github_token=${{ secrets.GH_TOKEN }}"
+            -var "stage=${{ github.event.inputs.stage }}" \
+            -var "github_token=${{ secrets.GH_TOKEN }}"
         working-directory: ./terraform # Ensure this path is correct for your Terraform files
 
 
       - name: Validate app health
         run: |
-          EC2_PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
+          VAR_STAGE="${{ github.event.inputs.stage }}"
+          EC2_PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance-"$VAR_STAGE"" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
           sleep 120
           curl -f http://$EC2_PUBLIC_IP:80
           curl -f http://$EC2_PUBLIC_IP:8080
