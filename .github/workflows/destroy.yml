@@ -1,35 +1,79 @@
-name: destroy the infrastructure
+name: Destroy AWS Infrastructure with Terraform
 
 on:
-  push:
-    paths:
-      - '.github/workflows/destroy.yml'
-    branches:
-      - assignment-3
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Select Deployment Stage (dev or prod)'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+
+env:
+  TERRAFORM_VERSION: "1.7.0"
+  AWS_REGION: "ap-south-2"
+  S3_BACKEND_BUCKET_NAME: "terraform-state-buckettt"
 
 jobs:
-  destroy:
+  destroy_infrastructure:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-  
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Optional: Build Lambda zip files if you use Lambda functions
+      - name: Build Lambda Deployment Packages
+        run: chmod +x build_lambda_zips.sh && ./build_lambda_zips.sh
+        working-directory: ./
+        continue-on-error: true
+
+      - name: Verify Lambda Zips After Build (Optional)
+        run: ls -l *.zip || true
+        working-directory: ./
+
+      - name: Setup Terraform CLI
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          aws-output: json
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Initialize Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: '1.2.3'
-
-      - name: Apply destroy configuration
+      - name: Determine Deployment Stage and Select/Create Terraform Workspace
+        id: set_stage_and_workspace
         run: |
-          terraform init
-          terraform destroy --auto-approve
-        working-directory: ./terraform
-      
+          STAGE="${{ github.event.inputs.stage }}"
+          echo "STAGE=$STAGE" >> $GITHUB_ENV
+
+          terraform init \
+            -backend-config="bucket=${{ env.S3_BACKEND_BUCKET_NAME }}" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="key=terraform/${STAGE}/terraform.tfstate"
+
+          if terraform workspace list | grep -q " ${STAGE}$"; then
+            terraform workspace select "$STAGE"
+          else
+            terraform workspace new "$STAGE"
+          fi
+        working-directory: ./
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./
+
+      - name: Terraform Plan Destroy
+        run: terraform plan -destroy -out=tfplan -var-file=${{ github.event.inputs.stage }}.tfvars
+        working-directory: ./
+
+      - name: Terraform Apply Destroy
+        run: terraform apply -auto-approve tfplan
+        working-directory: ./
