@@ -1,4 +1,4 @@
-resource "aws_instance" "app_server" { # Changed from "techeazy_ec2_app"
+resource "aws_instance" "app_server" {
   ami                         = "ami-07891c5a242abf4bc" # Keep your specific AMI ID. Confirm it's valid for your region.
   instance_type               = var.instance_type
   key_name                    = var.key_name
@@ -18,7 +18,7 @@ resource "aws_instance" "app_server" { # Changed from "techeazy_ec2_app"
   REPO_NAME                    = trimsuffix(basename(var.repo_url), ".git"),
   upload_on_shutdown_service_content = templatefile("${path.module}/upload-on-shutdown.service", {
     S3_BUCKET_NAME = var.s3_bucket_name,
-    STAGE          = var.stage           # <-- fixed here
+    STAGE          = var.stage  
   }),
   upload_on_shutdown_sh_content = file("${path.module}/upload_on_shutdown.sh"),
   verifyrole1a_sh_content       = file("${path.module}/verifyrole1a.sh"),
