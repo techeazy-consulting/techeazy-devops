@@ -40,7 +40,7 @@ jobs:
           terraform init
           VAR_FILE="${{ github.event.inputs.stage }}.tfvars"
           terraform destroy -var-file="$VAR_FILE" --auto-approve \
-          -var "stage=${{ github.event.inputs.stage }}"
+            -var "stage=${{ github.event.inputs.stage }}"
         working-directory: ./terraform
       
 
