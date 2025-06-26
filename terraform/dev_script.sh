@@ -8,6 +8,8 @@ S3_BUCKET_NAME="${S3_BUCKET_NAME}"          # Corrected: Now matches uppercase f
 AWS_REGION_FOR_SCRIPT="${AWS_REGION_FOR_SCRIPT}" # NEW: This variable is now correctly received
 
 
+sudo apt update  
+sudo apt install unzip -y
 # Install AWS CLI v2 manually
 if ! command -v aws &> /dev/null; then
   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -15,10 +17,10 @@ if ! command -v aws &> /dev/null; then
   sudo ./aws/install
 fi
 
-git clone "$REPO_URL"
-sudo apt update  
 sudo apt install "$JAVA_VERSION" -y
-apt install maven -y
+sudo apt install maven -y
+
+git clone "$REPO_URL"
 cd "$REPO_DIR_NAME"
 chmod +x mvnw
 
