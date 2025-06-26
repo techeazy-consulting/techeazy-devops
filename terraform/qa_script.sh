@@ -8,6 +8,8 @@ S3_BUCKET_NAME="${S3_BUCKET_NAME}"          # Corrected: Now matches uppercase f
 AWS_REGION_FOR_SCRIPT="${AWS_REGION_FOR_SCRIPT}" # NEW: This variable is now correctly received
 
 
+sudo apt update  
+sudo apt install unzip -y
 # Install AWS CLI v2 manually
 if ! command -v aws &> /dev/null; then
   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -15,10 +17,14 @@ if ! command -v aws &> /dev/null; then
   sudo ./aws/install
 fi
 
-git clone "$REPO_URL"
-sudo apt update  
 sudo apt install "$JAVA_VERSION" -y
-apt install maven -y
+sudo apt install maven -y
+
+export HOME=/root
+echo "HOME environment variable set to: $HOME"
+
+cd /opt
+git clone "$REPO_URL"
 cd "$REPO_DIR_NAME"
 chmod +x mvnw
 
@@ -30,10 +36,10 @@ nohup $JAVA_HOME/bin/java -jar target/*.jar > app.log 2>&1 &
 
 # --- Upload cloud-init logs to S3 ---
 # Give cloud-init a moment to finish writing its logs.
-sleep 10
+sleep 30
 # Upload the log. The '|| true' prevents the script from exiting if upload fails
 # (e.g., due to transient S3 issues), allowing the rest of the script to complete.
-aws s3 cp /var/log/cloud-init-output.log "s3://${S3_BUCKET_NAME}/app/qa/dev/cloud-init-output-$(hostname)-$(date +%Y%m%d%H%M%S).log" \
+aws s3 cp /var/log/cloud-init-output.log "s3://${S3_BUCKET_NAME}/app/logs/qa/cloud-init-output-$(hostname)-$(date +%Y%m%d%H%M%S).log" \
     --region "${AWS_REGION_FOR_SCRIPT}" || true # CRITICAL: --region must be here!
 echo "Cloud-init log upload attempted."
 

@@ -8,16 +8,22 @@ S3_BUCKET_NAME="${S3_BUCKET_NAME}"          # Corrected: Now matches uppercase f
 AWS_REGION_FOR_SCRIPT="${AWS_REGION_FOR_SCRIPT}" # NEW: This variable is now correctly received
 GITHUB_TOKEN="${GITHUB_TOKEN}" # NEW: This variable is now correctly received
 
-
+sudo apt update  
+sudo apt install unzip -y
 # Install AWS CLI v2 manually
 if ! command -v aws &> /dev/null; then
   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
   unzip awscliv2.zip
   sudo ./aws/install
 fi
-git clone https://${GITHUB_TOKEN}@github.com/sumit-patil-24/Ekart.git
-sudo apt update  
+
 sudo apt install "$JAVA_VERSION" -y
+export HOME=/root
+echo "HOME environment variable set to: $HOME"
+
+cd /opt
+# Clone the repository using the provided GITHUB_TOKEN for authentication
+git clone https://${GITHUB_TOKEN}@github.com/sumit-patil-24/Ekart.git
 apt install maven -y
 cd "$REPO_DIR_NAME"
 chmod +x mvnw
