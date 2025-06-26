@@ -63,3 +63,9 @@ variable "github_token" {
   type        = string
   sensitive = true  
 }
+
+variable "git_repo_path" {
+  description = "Path to the Git repository"
+  type        = string
+  default     = "techeazy-devops" # Replace with your actual Git repository path
+} 

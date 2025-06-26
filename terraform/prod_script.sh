@@ -11,6 +11,8 @@ STOP_INSTANCE="${STOP_INSTANCE}"
 S3_BUCKET_NAME="${S3_BUCKET_NAME}"          # Corrected: Now matches uppercase from Terraform
 AWS_REGION_FOR_SCRIPT="${AWS_REGION_FOR_SCRIPT}" # NEW: This variable is now correctly received
 GITHUB_TOKEN="${GITHUB_TOKEN}" # NEW: This variable is now correctly received
+GIT_REPO_PATH="${GIT_REPO_PATH}" # NEW: This variable is now correctly received
+
 
 sudo apt update  
 sudo apt install unzip -y
@@ -27,13 +29,13 @@ echo "HOME environment variable set to: $HOME"
 
 cd /opt
 # Clone the repository using the provided GITHUB_TOKEN for authentication
-git clone https://${GITHUB_TOKEN}@github.com/sumit-patil-24/secretsanta-generator.git
+git clone https://$GITHUB_TOKEN@$GIT_REPO_PATH
 apt install maven -y
 cd "$REPO_DIR_NAME"
-#chmod +x mvnw
+chmod +x mvnw
 
 #build artifact
-mvn clean package -DskipTests
+./mvnw clean package -DskipTests
 
 # Run the app
 nohup $JAVA_HOME/bin/java -jar target/*.jar > app.log 2>&1 &

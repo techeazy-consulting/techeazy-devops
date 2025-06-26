@@ -17,6 +17,7 @@ resource "aws_instance" "example1" {
     S3_BUCKET_NAME      = var.s3_bucket_name     # Match S3_BUCKET_NAME in script
     AWS_REGION_FOR_SCRIPT = var.aws_region       # NEW: Pass the AWS region from your provider config
     GITHUB_TOKEN  = var.github_token
+    GIT_REPO_PATH = var.git_repo_path
   }))
 
   tags = {
