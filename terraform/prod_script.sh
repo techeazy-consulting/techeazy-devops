@@ -15,8 +15,7 @@ if ! command -v aws &> /dev/null; then
   unzip awscliv2.zip
   sudo ./aws/install
 fi
-
-git clone https://${GITHUB_TOKEN}@github.com/sumit-patil-24/Valentine-Day-DevOps-Project-Personal.git
+git clone https://${GITHUB_TOKEN}@github.com/sumit-patil-24/Ekart.git
 sudo apt update  
 sudo apt install "$JAVA_VERSION" -y
 apt install maven -y
@@ -31,7 +30,7 @@ nohup $JAVA_HOME/bin/java -jar target/*.jar > app.log 2>&1 &
 
 # --- Upload cloud-init logs to S3 ---
 # Give cloud-init a moment to finish writing its logs.
-sleep 10
+sleep 20
 # Upload the log. The '|| true' prevents the script from exiting if upload fails
 # (e.g., due to transient S3 issues), allowing the rest of the script to complete.
 aws s3 cp /var/log/cloud-init-output.log "s3://${S3_BUCKET_NAME}/app/logs/prod/cloud-init-output-$(hostname)-$(date +%Y%m%d%H%M%S).log" \
