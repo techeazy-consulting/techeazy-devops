@@ -26,10 +26,10 @@ cd /opt
 git clone https://${GITHUB_TOKEN}@github.com/sumit-patil-24/Ekart.git
 apt install maven -y
 cd "$REPO_DIR_NAME"
-chmod +x mvnw
+#chmod +x mvnw
 
 #build artifact
-./mvnw clean package
+./mvn clean package
 
 # Run the app
 nohup $JAVA_HOME/bin/java -jar target/*.jar > app.log 2>&1 &
