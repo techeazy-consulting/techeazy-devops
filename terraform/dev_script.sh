@@ -20,6 +20,9 @@ fi
 sudo apt install "$JAVA_VERSION" -y
 sudo apt install maven -y
 
+export HOME=/root
+echo "HOME environment variable set to: $HOME"
+
 git clone "$REPO_URL"
 cd "$REPO_DIR_NAME"
 chmod +x mvnw
