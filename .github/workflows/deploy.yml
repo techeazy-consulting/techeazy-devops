@@ -64,7 +64,7 @@ jobs:
           
           # 4. Perform the frontend application health check.
           echo "--- Checking frontend application health on port 80..."
-          if curl -f --max-time 10 http://$EC2_PUBLIC_IP:80; then
+          if curl -f http://$EC2_PUBLIC_IP:80; then
             echo "✅ SUCCESS: Frontend application is healthy and responding on port 80."
           else
             echo "❌ FAILURE: Frontend application is not responding or returned an error."

@@ -40,6 +40,21 @@ The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It per
 5. **Validate app health**: Validates the health of the application by sending a request to the EC2 instance.
 6. **Destroy Infrastructure** Destroys the infrastrucure.
 
+## Note:-
+```
+resource "aws_s3_bucket" "example" {
+  bucket = var.s3_bucket_name 
+
+  #force_destroy = true 
+
+  tags = {
+    Name        = "My bucket"
+    Environment = "Dev"
+  }
+}
+```
+i commented force_destroy part in s3 bucket because Manually Empty the Bucket is Safest 
+This is the safest method, especially for production environments. You manually empty the bucket using the AWS Management Console or the AWS CLI before running terraform destroy.
+
 ## Future/incomplete work
 * GitHub Token Handling
-* Config Separation
