@@ -55,5 +55,17 @@ variable "stop_after_minutes" {
 variable "s3_bucket_name" {
   description = "Default AWS region for CLI configuration"
   type        = string
-  default     = "bucket-for-logs-1234567890" # Replace with your desired bucket name
+  default     = "bucket-4254" # Replace with your desired bucket name
 }
+
+variable "github_token" {
+  description = "GitHub token for accessing private repositories"
+  type        = string
+  sensitive = true  
+}
+
+variable "git_repo_path" {
+  description = "Path to the Git repository"
+  type        = string
+  default     = "https://github.com/techeazy-consulting/techeazy-devops.git" # Replace with your actual Git repository path
+} 

@@ -1,0 +1,11 @@
+{
+  "ami_value": "ami-053b0d53c279acc90",
+  "instance_type_value": "t2.micro",
+  "key_name_value": "my-key-pair",
+  "git_repo_path": "https://github.com/techeazy-consulting/techeazy-devops.git",
+  "repo_dir_name": "techeazy-devops",
+  "java_version_value": "openjdk-21-jdk-headless",
+  "aws_region": "us-east-1",
+  "s3_bucket_name": "bucket-4254",
+  "stop_after_minutes": 40
+}

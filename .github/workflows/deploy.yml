@@ -1,14 +1,28 @@
 name: Deploy to EC2
 
 on:
-  push:
-    paths:
-      - 'terraform/**' 
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Deployment stage'
+        required: true
+        default: 'dev'
+        options:
+          - dev
+          - qa
+          - prod 
  
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate input
+        run: |
+          if [[ "${{ github.event.inputs.stage }}" != "dev" && "${{ github.event.inputs.stage }}" != "qa" && "${{ github.event.inputs.stage }}" != "prod" ]]; then
+            echo "Invalid input: ${{ github.event.inputs.stage }}. Please use one of the following: dev, qa, prod."
+            exit 1
+          fi
+          
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -17,7 +31,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
           aws-output: json
 
       - name: Initialize Terraform
@@ -26,13 +40,35 @@ jobs:
           terraform_version: '1.2.3'
 
       - name: Apply Terraform configuration
+        # Use the 'env' block to pass the GitHub token as a Terraform variable
+        env:
+          # Terraform automatically picks up environment variables prefixed with TF_VAR_
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
         run: |
           terraform init
-          terraform apply --auto-approve
-        working-directory: ./terraform   
+          terraform validate
+          VAR_FILE="${{ github.event.inputs.stage }}.json"
+          terraform apply -var-file="$VAR_FILE" --auto-approve \
+            -var "stage=${{ github.event.inputs.stage }}" \
+            -var "github_token=${{ secrets.GH_TOKEN }}"
+        working-directory: ./terraform # Ensure this path is correct for your Terraform files
+
 
       - name: Validate app health
         run: |
-          EC2_PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
+          VAR_STAGE="${{ github.event.inputs.stage }}"
+          EC2_PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance-"$VAR_STAGE"" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
+          echo "--- Waiting 120 seconds for the application to initialize..."
           sleep 120
-          curl -f http://$EC2_PUBLIC_IP:80
+          echo "--- Wait complete. Starting health checks."
+          
+          # 4. Perform the frontend application health check.
+          echo "--- Checking frontend application health on port 80..."
+          if curl -f http://$EC2_PUBLIC_IP:80; then
+            echo "✅ SUCCESS: Frontend application is healthy and responding on port 80."
+          else
+            echo "❌ FAILURE: Frontend application is not responding or returned an error."
+            exit 1 # Fail the step if the curl command fails.
+          fi
+
+         
