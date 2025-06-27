@@ -37,18 +37,9 @@ jobs:
       - name: Initialize Terraform
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: '1.2.3'
-
-      - name: Terraform Init and Workspace Management
-        run: |
-          terraform init
-          terraform workspace select ${{ github.event.inputs.stage }} || terraform workspace new ${{ github.event.inputs.stage }}
-        working-directory: ./terraform 
+          terraform_version: '1.2.3' 
 
       - name: Apply Terraform configuration
-        env:
-          # Terraform automatically picks up environment variables prefixed with TF_VAR_
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
         run: |
           terraform init
           terraform validate
