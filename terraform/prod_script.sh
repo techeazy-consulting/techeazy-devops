@@ -15,7 +15,6 @@ GIT_REPO_PATH="${GIT_REPO_PATH}" # NEW: This variable is now correctly received
 
 
 
-git clone https://$GITHUB_TOKEN@$GIT_REPO_PATH
 sudo apt update  
 sudo apt install unzip -y
 
@@ -26,6 +25,7 @@ echo "HOME environment variable set to: $HOME"
 
 cd /opt
 # Clone the repository using the provided GITHUB_TOKEN for authentication
+git clone https://$GITHUB_TOKEN@$GIT_REPO_PATH
 apt install maven -y
 cd "$REPO_DIR_NAME"
 chmod +x mvnw
