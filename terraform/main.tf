@@ -75,7 +75,7 @@ resource "aws_security_group" "mysg" {
 resource "aws_s3_bucket" "example" {
   bucket = "${var.s3_bucket_name}-${var.stage}"
 
-  #force_destroy = true 
+  force_destroy = true 
 
   lifecycle_rule {
     enabled = true
