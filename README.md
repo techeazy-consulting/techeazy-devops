@@ -69,7 +69,7 @@ The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It per
 4. **Apply Terraform configuration**: Executes terraform apply -auto-approve to provision the infrastructure defined in the terraform/ directory. This step uses variables (e.g., stage, github_pat) passed from the workflow inputs to customize the deployment.
 5. **Validate app health**: After successful Terraform application, this step sends an HTTP request to the deployed EC2 instance's public IP/DNS on the relevant port (80 or 8080) to confirm the application is running and reachable. This acts as a basic health check.
 
-## Note:-
+## Recommendattion:-
 ```
 resource "aws_s3_bucket" "example" {
   bucket = var.s3_bucket_name 
@@ -85,3 +85,12 @@ resource "aws_s3_bucket" "example" {
 i commented force_destroy part in s3 bucket because Manually Empty the Bucket is Safest 
 This is the safest method, especially for production environments. You manually empty the bucket using the AWS Management Console or the AWS CLI before running terraform destroy.
 
+# You can use AWS System manager to store prod.json file because its information is sensitive.
+
+# Passing github-token directly into user_data will technically work but it have singificant security risks.
+ **Easy Access:** The userdata is visible in ec2 console and via AWS api calls for that innstance, Anyone with (ec2 DescribeInstanceAttribute) permission (even if you dont have direct SSH access to instance) can retrive this "user_data" and thus your sensitive GITHUB PAT.
+
+ **Runtime/History:** Depending on how your instance logs are configured. The user_data or parts of its execution might up in various logs, increasing exposure.
+
+ **NO Runtime Refresh:** If  the token needs to be revoked or rotated, you have to terminate and relaunch instance (or manually update the script tokan on running instance, which defeats the purpose of Infrastructure as Code).
+## Instead use AWS Secret Manager it is more secure and allows you to rotate secrets.
