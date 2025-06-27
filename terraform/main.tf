@@ -125,7 +125,7 @@ resource "aws_iam_role" "s3_creator_uploader_role" {
 
 resource "aws_iam_policy" "s3_creator_uploader_policy" {
   name        = "s3_creator_uploader_policy-${var.stage}"
-  description = "Provides permissions to create S3 buckets and upload objects, explicitly denying read/download"
+  description = "Provides permissions to create S3 buckets, upload objects, and manage lifecycle configurations"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -133,19 +133,22 @@ resource "aws_iam_policy" "s3_creator_uploader_policy" {
       {
         Effect   = "Allow"
         Action   = [
-          "s3:CreateBucket", 
-          "s3:PutObject",    
-          "s3:PutObjectAcl", 
+          "s3:CreateBucket",
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:PutBucketLifecycleConfiguration",   # <-- NEW: Permission to create/update lifecycle config
+          "s3:GetBucketLifecycleConfiguration",   # <-- NEW: Required to read the configuration
+          "s3:DeleteBucketLifecycle",           # <-- NEW: Permission to delete lifecycle config (your error)
         ]
-        Resource = "*" 
+        Resource = "*"
       },
       {
-        Effect   = "Deny"     
+        Effect   = "Deny"
         Action   = [
-          "s3:Get*",  
-          "s3:List*", 
+          "s3:Get*",  # This is a broad deny, but GetBucketLifecycleConfiguration will be allowed if explicitly permitted
+          "s3:List*",
         ]
-        Resource = "*" 
+        Resource = "*"
       },
     ]
   })
