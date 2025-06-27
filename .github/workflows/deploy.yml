@@ -47,7 +47,7 @@ jobs:
         run: |
           terraform init
           terraform validate
-          VAR_FILE="${{ github.event.inputs.stage }}.tfvars"
+          VAR_FILE="${{ github.event.inputs.stage }}.json"
           terraform apply -var-file="$VAR_FILE" --auto-approve \
             -var "stage=${{ github.event.inputs.stage }}" \
             -var "github_token=${{ secrets.GH_TOKEN }}"

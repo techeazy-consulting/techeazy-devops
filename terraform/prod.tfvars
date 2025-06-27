@@ -6,3 +6,5 @@ repo_dir_name = "secretsanta-generator"
 java_version_value = "openjdk-21-jdk-headless"
 aws_region = "us-east-1"
 stop_after_minutes   = 100
+s3_bucket_name="bucket-4254"
+backup_bucket_name="sumit-4254"

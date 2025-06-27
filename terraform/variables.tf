@@ -55,7 +55,7 @@ variable "stop_after_minutes" {
 variable "s3_bucket_name" {
   description = "Default AWS region for CLI configuration"
   type        = string
-  default     = "bucket-for-logs-1234567890" # Replace with your desired bucket name
+  default     = "bucket-4254" # Replace with your desired bucket name
 }
 
 variable "github_token" {
@@ -67,5 +67,11 @@ variable "github_token" {
 variable "git_repo_path" {
   description = "Path to the Git repository"
   type        = string
-  default     = "techeazy-devops" # Replace with your actual Git repository path
+  default     = "github.com/sumit-patil-24/secretsanta-generator.git" # Replace with your actual Git repository path
 } 
+
+variable "backup_bucket_name" {
+  description = "Name of the backup S3 bucket"
+  type        = string
+  default     = "sumit-4254" # Replace with your desired backup bucket name
+}
