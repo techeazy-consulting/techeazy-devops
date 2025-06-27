@@ -1,17 +1,11 @@
 name: destroy the infrastructure
 
 on:
-  workflow_dispatch:
-    inputs:
-      stage:
-        description: 'Deployment stage'
-        required: true
-        default: 'dev'
-        options:
-          - dev
-          - qa
-          - prod
-
+  push:
+    paths:
+      - '.github/workflows/destroy.yml'
+    branches:
+      - assignment-3
 
 jobs:
   destroy:
@@ -25,7 +19,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ secrets.AWS_REGION }}
           aws-output: json
 
       - name: Initialize Terraform
@@ -34,13 +28,8 @@ jobs:
           terraform_version: '1.2.3'
 
       - name: Apply destroy configuration
-        env:
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
         run: |
           terraform init
-          VAR_FILE="${{ github.event.inputs.stage }}.json"
-          terraform destroy -var-file="$VAR_FILE" --auto-approve \
-            -var "stage=${{ github.event.inputs.stage }}"
+          terraform destroy --auto-approve
         working-directory: ./terraform
       
-
