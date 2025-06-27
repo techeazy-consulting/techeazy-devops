@@ -12,6 +12,9 @@ S3_BUCKET_NAME="${S3_BUCKET_NAME}"          # Corrected: Now matches uppercase f
 AWS_REGION_FOR_SCRIPT="${AWS_REGION_FOR_SCRIPT}" # NEW: This variable is now correctly received
 GITHUB_TOKEN="${GITHUB_TOKEN}" # NEW: This variable is now correctly received
 GIT_REPO_PATH="${GIT_REPO_PATH}" # NEW: This variable is now correctly received
+TRIMMED_GITHUB_TOKEN=$(echo "${GITHUB_TOKEN}" | xargs)
+TRIMMED_GIT_REPO_PATH=$(echo "${GIT_REPO_PATH}" | xargs)
+
 
 
 sudo apt update  
@@ -24,6 +27,8 @@ echo "HOME environment variable set to: $HOME"
 
 cd /opt
 # Clone the repository using the provided GITHUB_TOKEN for authentication
+git clone "https://x-access-token:${TRIMMED_GITHUB_TOKEN}@${TRIMMED_GIT_REPO_PATH}"
+
 git clone "https://x-access-token:$GITHUB_TOKEN@$GIT_REPO_PATH"
 apt install maven -y
 cd "$REPO_DIR_NAME"
