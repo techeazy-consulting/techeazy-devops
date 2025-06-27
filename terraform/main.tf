@@ -94,9 +94,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
       prefix = "logs/${var.stage}/"
     }
 
-    lifecycle {
-    ignore_errors = true
-    }
+   
 
     expiration {
       days = 7
