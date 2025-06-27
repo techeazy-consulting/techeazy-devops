@@ -39,6 +39,12 @@ jobs:
         with:
           terraform_version: '1.2.3' 
 
+      - name: Terraform Init and Workspace Management
+        run: |
+          terraform init
+          terraform workspace select ${{ github.event.inputs.stage }} || terraform workspace new ${{ github.event.inputs.stage }}
+        working-directory: ./terraform
+
       - name: Apply Terraform configuration
         run: |
           terraform init
