@@ -67,11 +67,5 @@ variable "github_token" {
 variable "git_repo_path" {
   description = "Path to the Git repository"
   type        = string
-  default     = "github.com/sumit-patil-24/secretsanta-generator.git" # Replace with your actual Git repository path
+  default     = "https://github.com/techeazy-consulting/techeazy-devops.git" # Replace with your actual Git repository path
 } 
-
-variable "backup_bucket_name" {
-  description = "Name of the backup S3 bucket"
-  type        = string
-  default     = "sumit-4254" # Replace with your desired backup bucket name
-}
