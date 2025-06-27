@@ -88,10 +88,10 @@ This is the safest method, especially for production environments. You manually 
 ## You can use AWS System manager to store prod.json file because its information is sensitive.
 
 ## Passing github-token directly into user_data will technically work but it have singificant security risks.
-  **Easy Access:** The userdata is visible in ec2 console and via AWS api calls for that innstance, Anyone with (ec2 DescribeInstanceAttribute) permission (even if you dont have direct SSH access to instance) can retrive this "user_data" and thus your sensitive GITHUB PAT.
+1. **Easy Access:** The userdata is visible in ec2 console and via AWS api calls for that innstance, Anyone with (ec2 DescribeInstanceAttribute) permission (even if you dont have direct SSH access to instance) can retrive this "user_data" and thus your sensitive GITHUB PAT.
 
-  **Runtime/History:** Depending on how your instance logs are configured. The user_data or parts of its execution might up in various logs, increasing exposure.
+2. **Runtime/History:** Depending on how your instance logs are configured. The user_data or parts of its execution might up in various logs, increasing exposure.
 
-  **NO Runtime Refresh:** If  the token needs to be revoked or rotated, you have to terminate and relaunch instance (or manually update the script tokan on running instance, which defeats the purpose of Infrastructure as Code).
+3. **NO Runtime Refresh:** If  the token needs to be revoked or rotated, you have to terminate and relaunch instance (or manually update the script tokan on running instance, which defeats the purpose of Infrastructure as Code).
   
 ## Instead use AWS Secret Manager it is more secure and allows you to rotate secrets.
