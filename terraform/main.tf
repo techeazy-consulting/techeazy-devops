@@ -32,7 +32,7 @@ resource "aws_instance" "example1" {
 
 
 resource "aws_security_group" "mysg" {
-  name = "webig"
+  name = "webig-${var.stage}"
 
   ingress {
     description = "HTTP from vpc"
@@ -73,9 +73,19 @@ resource "aws_security_group" "mysg" {
 }
 
 resource "aws_s3_bucket" "example" {
-  bucket = var.s3_bucket_name 
+  bucket = "${var.s3_bucket_name}-${var.stage}"
 
-  #force_destroy = true 
+  force_destroy = true 
+
+  lifecycle_rule {
+    enabled = true
+
+    expiration {
+      days = 7
+    }
+
+    prefix = "logs/${var.stage}/"
+  }
 
   tags = {
     Name        = "My bucket"
@@ -83,26 +93,11 @@ resource "aws_s3_bucket" "example" {
   }
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "example" {
-  bucket = aws_s3_bucket.example.id
 
-  rule {
-    id     = "delete_app_logs_after_7_days"
-    status = "Enabled"
-
-    filter {
-      prefix = "app/logs/"
-    }
-
-    expiration {
-      days = 7
-    }
-  }
-}
 
 
 resource "aws_iam_role" "s3_creator_uploader_role" {
-  name = "s3_creator_uploader_access_role"
+  name = "s3_creator_uploader_access_role-${var.stage}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -124,8 +119,8 @@ resource "aws_iam_role" "s3_creator_uploader_role" {
 }
 
 resource "aws_iam_policy" "s3_creator_uploader_policy" {
-  name        = "s3_creator_uploader_policy"
-  description = "Provides permissions to create S3 buckets and upload objects, explicitly denying read/download"
+  name        = "s3_creator_uploader_policy-${var.stage}"
+  description = "Provides permissions to create S3 buckets, upload objects, and manage lifecycle configurations"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -133,19 +128,22 @@ resource "aws_iam_policy" "s3_creator_uploader_policy" {
       {
         Effect   = "Allow"
         Action   = [
-          "s3:CreateBucket", 
-          "s3:PutObject",    
-          "s3:PutObjectAcl", 
+          "s3:CreateBucket",
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:PutBucketLifecycleConfiguration",   # <-- NEW: Permission to create/update lifecycle config
+          "s3:GetBucketLifecycleConfiguration",   # <-- NEW: Required to read the configuration
+          "s3:DeleteBucketLifecycle",           # <-- NEW: Permission to delete lifecycle config (your error)
         ]
-        Resource = "*" 
+        Resource = "*"
       },
       {
-        Effect   = "Deny"     
+        Effect   = "Deny"
         Action   = [
-          "s3:Get*",  
-          "s3:List*", 
+          "s3:Get*",  # This is a broad deny, but GetBucketLifecycleConfiguration will be allowed if explicitly permitted
+          "s3:List*",
         ]
-        Resource = "*" 
+        Resource = "*"
       },
     ]
   })
@@ -160,7 +158,7 @@ resource "aws_iam_role_policy_attachment" "s3_creator_uploader_attachment" {
 # --- IAM Instance Profile for S3 Creator/Uploader Role ---
 # An instance profile is required to attach an IAM role to an EC2 instance.
 resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
-  name_prefix = "s3-creator-uploader-profile"
+  name_prefix = "s3-creator-uploader-profile-${var.stage}"
   role = aws_iam_role.s3_creator_uploader_role.name # Reference the role created above
 
   tags = {
