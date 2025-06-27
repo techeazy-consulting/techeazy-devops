@@ -77,30 +77,23 @@ resource "aws_s3_bucket" "example" {
 
   #force_destroy = true 
 
+  lifecycle_rule {
+    enabled = true
+
+    expiration {
+      days = 7
+    }
+
+    prefix = "logs/${var.stage}/"
+  }
+
   tags = {
     Name        = "My bucket"
     Environment = "Dev"
   }
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "example" {
-  bucket = aws_s3_bucket.example.id
 
-  rule {
-    id     = "delete_app_logs_after_7_days"
-    status = "Enabled"
-
-    filter {
-      prefix = "logs/${var.stage}/"
-    }
-
-   
-
-    expiration {
-      days = 7
-    }
-  }
-}
 
 
 resource "aws_iam_role" "s3_creator_uploader_role" {
