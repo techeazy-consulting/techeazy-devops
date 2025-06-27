@@ -1,20 +1,15 @@
-# Assignment 4: CI/CD  Multi-Stage Deployment
+# Assignment 4: CI/CD Multi-Stage Deployment
 
 ## Prerequisites
 Before using this project, ensure you have the following:
 
-**AWS Account:** An active AWS account with programmatic access keys configured.
-
-**GitHub Account:** A GitHub account where this repository will be hosted.
-
-**GitHub Secrets:** The following secrets must be configured in your GitHub repository under Settings > Secrets > Actions:
-
-**AWS_ACCESS_KEY_ID:** Your AWS Access Key ID.
-
-**AWS_SECRET_ACCESS_KEY:** Your AWS Secret Access Key.
-
-**GH_TOKEN:** A GitHub Personal Access Token with repo scope, used for accessing private configuration repositories (if applicable).
-**S3 Bucket for Terraform State**: An S3 bucket must be pre-created in your AWS account. This bucket will be used by Terraform to store its state file (terraform.tfstate), enabling remote state management and collaboration.
+- *AWS Account*: An active AWS account with programmatic access keys configured.
+- *GitHub Account*: A GitHub account where this repository will be hosted.
+- *GitHub Secrets*: The following secrets must be configured in your GitHub repository under Settings > Secrets > Actions:
+  - AWS_ACCESS_KEY_ID: Your AWS Access Key ID
+  - AWS_SECRET_ACCESS_KEY: Your AWS Secret Access Key
+  - GH_TOKEN: A GitHub Personal Access Token with repo scope
+- *S3 Bucket for Terraform State*: An S3 bucket must be pre-created in your AWS account for storing Terraform state files.
 
 
 ## Project Overview
@@ -25,55 +20,44 @@ This project demonstrates the deployment of an application to an AWS EC2 instanc
 * `.github/workflows`: Contains deploy.yml and destroy.yml file for CI/CD.
 * `terraform/`: Contains Terraform configuration files for deploying to EC2
 
-Deployment Steps
-Trigger Deployment Workflow:
+## Deployment Steps
 
-Navigate to the Actions tab in your GitHub repository.
+### Trigger Deployment Workflow
+1. Navigate to the Actions tab in your GitHub repository
+2. Select the "CI/CD Multi-Stage Deployment" workflow
+3. Click "Run workflow"
+4. Select the desired Deployment Stage (dev, qa, or prod)
+5. Click "Run workflow"
 
-Select the CI/CD Multi-Stage Deployment workflow from the left sidebar.
+### Monitor Deployment
+- The workflow run will start and show progress in GitHub Actions
+- Green checkmarks indicate successful steps
 
-Click on Run workflow on the right side.
+### Verify Application Health
+1. Check the "Validate app health" step output
+2. Alternatively, manually verify using the EC2 instance's public IP/DNS:
+   - Port 80 (frontend)
+   - Port 8080 (backend)
 
-In the "Run workflow" dialog, select the desired Deployment Stage (dev, qa, or prod) from the dropdown.
+### Access Logs
+Application logs will be pushed to your S3 bucket under stage-specific prefixes:
+s3://your-bucket-name/logs/dev/
+s3://your-bucket-name/logs/qa/
+s3://your-bucket-name/logs/prod/
 
-Click the Run workflow button to initiate the deployment.
 
-Monitor Deployment:
+## Destroy the Infrastructure
+When infrastructure is no longer needed:
 
-The workflow run will start, and you can monitor its progress in the GitHub Actions interface.
+1. *Trigger Destroy Workflow*:
+   - Navigate to Actions > Destroy Infrastructure
+   - Select the stage to destroy
+   - Run workflow
 
-Upon successful completion, you will see green checkmarks next to each step.
-
-Verify Application Health:
-
-The Validate app health step will attempt to reach your deployed application. Check its output for success or failure.
-
-You can also manually verify by getting the public IP or DNS name of your EC2 instance from the AWS console and testing the application on ports 80 (frontend) or 8080 (backend).
-
-Access Logs:
-
-After deployment, application and deployment logs will be pushed to your S3 bucket under the stage-specific prefix (e.g., s3://your-bucket-name/logs/dev/).
-
-Destroy the Infrastructure
-When you no longer need the deployed infrastructure for a specific stage:
-
-Trigger Destroy Workflow:
-
-Navigate to the Actions tab in your GitHub repository.
-
-Select the Destroy Infrastructure workflow.
-
-Click on Run workflow on the right side.
-
-In the "Run workflow" dialog, select the Deployment Stage you wish to destroy.
-
-Click the Run workflow button.
-
-Manually Empty S3 Bucket (Crucial for terraform destroy):
-
-Before running the destroy.yml workflow, you must manually empty the S3 bucket that Terraform created to store your application logs (e.g., s3://your-bucket-name/logs/dev/...). This is a safety measure, as Terraform's destroy command cannot remove non-empty buckets by default without force_destroy = true set, which is intentionally avoided for safety (see "S3 Bucket Note").
-
-Go to the AWS S3 Console, find the relevant log bucket, select all objects, and delete them.
+2. *Manually Empty S3 Bucket* (Required before destruction):
+   - Go to AWS S3 Console
+   - Find the relevant log bucket
+   - Select and delete all objects
 
 
 ## Workflow Details
