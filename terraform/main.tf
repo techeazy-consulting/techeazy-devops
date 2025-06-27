@@ -32,7 +32,7 @@ resource "aws_instance" "example1" {
 
 
 resource "aws_security_group" "mysg" {
-  name = "webig"
+  name = "webig-${var.stage}"
 
   ingress {
     description = "HTTP from vpc"
@@ -102,7 +102,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
 
 
 resource "aws_iam_role" "s3_creator_uploader_role" {
-  name = "s3_creator_uploader_access_role"
+  name = "s3_creator_uploader_access_role-${var.stage}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -124,7 +124,7 @@ resource "aws_iam_role" "s3_creator_uploader_role" {
 }
 
 resource "aws_iam_policy" "s3_creator_uploader_policy" {
-  name        = "s3_creator_uploader_policy"
+  name        = "s3_creator_uploader_policy-${var.stage}"
   description = "Provides permissions to create S3 buckets and upload objects, explicitly denying read/download"
 
   policy = jsonencode({
@@ -160,7 +160,7 @@ resource "aws_iam_role_policy_attachment" "s3_creator_uploader_attachment" {
 # --- IAM Instance Profile for S3 Creator/Uploader Role ---
 # An instance profile is required to attach an IAM role to an EC2 instance.
 resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
-  name_prefix = "s3-creator-uploader-profile"
+  name_prefix = "s3-creator-uploader-profile-${var.stage}"
   role = aws_iam_role.s3_creator_uploader_role.name # Reference the role created above
 
   tags = {
