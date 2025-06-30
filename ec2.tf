@@ -1,5 +1,5 @@
 resource "aws_instance" "app_server" {
-  ami                         = "ami-07891c5a242abf4bc" # Keep your specific AMI ID. Confirm it's valid for your region.
+  ami                         = var.ami_id # Keep your specific AMI ID. Confirm it's valid for your region.
   instance_type               = var.instance_type
   key_name                    = var.key_name
   associate_public_ip_address = true
@@ -16,13 +16,13 @@ resource "aws_instance" "app_server" {
   AWS_REGION                   = var.region,
   AWS_ACCOUNT_ID               = data.aws_caller_identity.current.account_id,
   REPO_NAME                    = trimsuffix(basename(var.repo_url), ".git"),
+  EC2_SSH_PRIVATE_KEY = replace(var.ec2_ssh_private_key, "\\n", "\n"),
   upload_on_shutdown_service_content = templatefile("${path.module}/upload-on-shutdown.service", {
     S3_BUCKET_NAME = var.s3_bucket_name,
-    STAGE          = var.stage  
+    STAGE          = var.stage           # <-- fixed here
   }),
   upload_on_shutdown_sh_content = file("${path.module}/upload_on_shutdown.sh"),
   verifyrole1a_sh_content       = file("${path.module}/verifyrole1a.sh"),
-  dockerfile_content            = file("${path.module}/Dockerfile")
   })
   
   # The explicit self-dependency is NOT needed here anymore for private_ip as it's fetched in user_data.
