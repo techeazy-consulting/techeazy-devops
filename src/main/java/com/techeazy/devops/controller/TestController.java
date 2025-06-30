@@ -10,4 +10,9 @@ public class TestController {
     public  String test() {
         return "Successfully Deployed";
     }
+
+    @GetMapping
+    public  String SampleRequest() {
+        return "SampleRequest!!";
+    }
 }
