@@ -23,4 +23,4 @@ stop_schedule  = "cron(15 9 * * ? *)"
 repo_url       = "https://github.com/PRASADD65/techeazy-devops.git"
 
 # Enter the email address for sns subscription
-alert_email = "your_email_id@gmail.com"
+alert_email = "durgap8464@gmail.com"
