@@ -1,4 +1,4 @@
-# Assignment 3: Deploying to EC2 using Terraform and GitHub Actions
+# Assignment 5: Deploying Zero mile delivery system using Terraform and GitHub Actions
 
 ## Prerequisite
 * Aws access_key_id and secret access_key_id configured in github secrets.
