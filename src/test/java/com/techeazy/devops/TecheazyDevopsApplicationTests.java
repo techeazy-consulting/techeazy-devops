@@ -9,5 +9,5 @@ class TecheazyDevopsApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
+// Simply adding commands to check PR
 }
