@@ -1,4 +1,4 @@
-# Assignment 4: CI/CD Multi-Stage Deployment
+# Assignment 5: Enhanced CI/CD with Comprehensive CloudWatch Monitoring and Alerting
 
 ## Prerequisites
 Before using this project, ensure you have the following:
@@ -19,6 +19,7 @@ This project demonstrates the deployment of an application to an AWS EC2 instanc
 ## Directory Structure
 * `.github/workflows`: Contains deploy.yml and destroy.yml file for CI/CD.
 * `terraform/`: Contains Terraform configuration files for deploying to EC2
+  - `/terraform/config`: Contains .json files.
 
 ## Deployment Steps
 
@@ -45,6 +46,16 @@ s3://your-bucket-name/logs/dev/
 s3://your-bucket-name/logs/qa/
 s3://your-bucket-name/logs/prod/
 
+###  CloudWatch Alarms for Proactive Monitoring:
+Several CloudWatch Alarms are configured to provide real-time alerts on critical events:
+  1. Application Log Error Alarm:
+    - Purpose: To detect and alert on application-level errors or exceptions.
+  2. EC2 Instance Health Check Failure Alarm:
+    - Purpose: To monitor the underlying health and reachability of the EC2 instance.
+  3. EC2 Memory Utilization Alarm:
+    - Purpose: To detect high memory consumption, which can indicate performance issues or memory leaks.
+
+
 
 ## Destroy the Infrastructure
 When infrastructure is no longer needed:
@@ -68,6 +79,21 @@ The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It per
 3. **Initialize Terraform**: Navigates to the terraform/ directory and runs terraform init to initialize the working directory, download provider plugins, and configure the S3 backend.
 4. **Apply Terraform configuration**: Executes terraform apply -auto-approve to provision the infrastructure defined in the terraform/ directory. This step uses variables (e.g., stage, github_pat) passed from the workflow inputs to customize the deployment.
 5. **Validate app health**: After successful Terraform application, this step sends an HTTP request to the deployed EC2 instance's public IP/DNS on the relevant port (80 or 8080) to confirm the application is running and reachable. This acts as a basic health check.
+6. **SNS Topic for Alert Notifications**: The email address provided during workflow execution is subscribed to this SNS topic. It is essential to check your inbox and confirm the subscription to start receiving alerts.
+
+7. **Confirm the Email Subscription**: This is the most important manual step. Immediately after terraform apply completes, check the inbox of the email address you provided. You will receive a confirmation email from "AWS Notifications" with the subject "AWS Notification - Subscription Confirmation".
+Click the "Confirm subscription" link inside the email.
+A web page will open confirming that the subscription is now active.
+Once you have confirmed the subscription, your email is successfully subscribed to the app-alerts-topic and is ready to receive messages from the CloudWatch Alarm
+
+
+8. **Testing the Alerting Setup**:
+To simulate an application error and verify the CloudWatch Log Error Alarm and SNS notification:
+ 1. SSH into your deployed EC2 instance.
+ 2. Execute the following command to generate an "ERROR" log entry:
+   ```echo "ERROR: Simulated failure on $(date)" >> /home/ec2-user/app.log ```
+ 3. Check the email address you subscribed for an alert notification from AWS SNS. You can also view the alarm state in the CloudWatch console.
+
 
 ## Recommendattion:-
 ```

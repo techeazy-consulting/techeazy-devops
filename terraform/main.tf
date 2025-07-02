@@ -22,7 +22,10 @@ resource "aws_instance" "example1" {
     AWS_REGION_FOR_SCRIPT = var.aws_region       # NEW: Pass the AWS region from your provider config
 #    GITHUB_TOKEN  = var.github_token
     GIT_REPO_PATH = var.git_repo_path
-    CW_AGENT_CONFIG_JSON = file("./config.json") # Pass config.json content
+    CW_AGENT_CONFIG_JSON = templatefile("./config.json.tpl", {
+        log_file_path      = var.app_log_file_path         // <-- Now truly a variable!
+        log_group_name_var = aws_cloudwatch_log_group.app_log_group.name
+    })
   }))
 
   tags = {
@@ -160,8 +163,8 @@ resource "aws_cloudwatch_metric_alarm" "error_alarm" {
   evaluation_periods        = 1
   datapoints_to_alarm       = 1
   statistic                 = "Sum"
-  threshold                 = 1
-  period                    = 60
+  threshold                 = 1   # Trigger if at least 1 error in the period
+  period                    = 300 # 5 minutes in seconds
   metric_name               = aws_cloudwatch_log_metric_filter.error_metric_filter.metric_transformation[0].name
   namespace                 = aws_cloudwatch_log_metric_filter.error_metric_filter.metric_transformation[0].namespace
   alarm_description         = "Triggers when application logs contain errors."

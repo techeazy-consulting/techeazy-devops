@@ -8,5 +8,6 @@
   "aws_region": "us-east-1",
   "s3_bucket_name": "bucket-4254",
   "stop_after_minutes": 20,
-  "email_address": "patil04sumit@gmail.com"
+  "email_address": "patil04sumit@gmail.com",
+  "app_log_file_path" : "/opt/techeazy-devops/app.log"
 }

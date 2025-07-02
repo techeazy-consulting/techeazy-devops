@@ -77,3 +77,9 @@ variable "email_address" {
   # IMPORTANT: Replace with your email address
   default     = "your_email@example.com" 
 }
+
+variable "app_log_file_path" {
+  description = "The absolute path to the application log file on the EC2 instance."
+  type        = string
+  default     = "/opt/techeazy-devops/app.log" 
+}

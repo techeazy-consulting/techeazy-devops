@@ -69,8 +69,8 @@
       "files": {
         "collect_list": [
           {
-            "file_path": "/opt/techeazy-devops/app.log",
-            "log_group_name": "app.log-dev",
+            "file_path": "${log_file_path}",
+            "log_group_name": "${log_group_name_var}",
             "log_stream_name": "{instance_id}",
             "timezone": "Local"
           }
