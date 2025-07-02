@@ -61,6 +61,7 @@ variable "s3_bucket_name" {
 variable "github_token" {
   description = "GitHub token for accessing private repositories"
   type        = string
+  default = "fsdfdfdssknfksdfksdfk" # Replace with your actual GitHub token
   sensitive = true  
 }
 
@@ -69,3 +70,10 @@ variable "git_repo_path" {
   type        = string
   default     = "https://github.com/techeazy-consulting/techeazy-devops.git" # Replace with your actual Git repository path
 } 
+
+variable "email_address" {
+  description = "The email address for SNS notifications."
+  type        = string
+  # IMPORTANT: Replace with your email address
+  default     = "your_email@example.com" 
+}
