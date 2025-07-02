@@ -1,87 +1,127 @@
-# Assignment 4: CI/CD Multi-Stage Deployment
+# 🚀 Techeazy DevOps Deployment Guide
 
-## Prerequisites
-Before using this project, ensure you have the following:
+Easily deploy a **Spring Boot** app on **AWS EC2** using **Terraform**!  
+✅ Uses **Java 21**  
+✅ Runs on **port 80**  
+✅ Stores logs in a **private S3 bucket** with **auto-deletion after 7 days**  
+✅ Secure with **IAM roles**
 
-- *AWS Account*: An active AWS account with programmatic access keys configured.
-- *GitHub Account*: A GitHub account where this repository will be hosted.
-- *GitHub Secrets*: The following secrets must be configured in your GitHub repository under Settings > Secrets > Actions:
-  - AWS_ACCESS_KEY_ID: Your AWS Access Key ID
-  - AWS_SECRET_ACCESS_KEY: Your AWS Secret Access Key
-  - GH_TOKEN: A GitHub Personal Access Token with repo scope
-- *S3 Bucket for Terraform State*: An S3 bucket must be pre-created in your AWS account for storing Terraform state files.
+---
 
+## 🛠️ Prerequisites
 
-## Project Overview
-This project demonstrates the deployment of an application to an AWS EC2 instance using Terraform and GitHub Actions. It includes CI/CD deployment with different stages such as dev,qa and prod.
+Make sure you have the following ready:
 
+- ✅ [Terraform](https://www.terraform.io/downloads) installed  
+- ✅ AWS CLI configured (`aws configure`)  
+- ✅ An EC2 Key Pair  
+- ✅ A `.tfvars` file (e.g., `dev.tfvars`) with your specific values  
 
-## Directory Structure
-* `.github/workflows`: Contains deploy.yml and destroy.yml file for CI/CD.
-* `terraform/`: Contains Terraform configuration files for deploying to EC2
+---
 
-## Deployment Steps
+# 🚀 Techeazy DevOps Deployment Guide
 
-### Trigger Deployment Workflow
-1. Navigate to the Actions tab in your GitHub repository
-2. Select the "CI/CD Multi-Stage Deployment" workflow
-3. Click "Run workflow"
-4. Select the desired Deployment Stage (dev, qa, or prod)
-5. Click "Run workflow"
+Easily deploy a **Spring Boot** app on **AWS EC2** using **Terraform**!  
+✅ **Java 21**  
+✅ **Port 80**  
+✅ **Private S3 bucket** for logs with **auto-deletion after 7 days**  
+✅ **IAM roles** for security  
 
-### Monitor Deployment
-- The workflow run will start and show progress in GitHub Actions
-- Green checkmarks indicate successful steps
+---
 
-### Verify Application Health
-1. Check the "Validate app health" step output
-2. Alternatively, manually verify using the EC2 instance's public IP/DNS:
-   - Port 80 (frontend)
-   - Port 8080 (backend)
+## 🛠️ Prerequisites
 
-### Access Logs
-Application logs will be pushed to your S3 bucket under stage-specific prefixes:
-s3://your-bucket-name/logs/dev/
-s3://your-bucket-name/logs/qa/
-s3://your-bucket-name/logs/prod/
+Make sure you have the following ready:  
 
+- 🛠️ [Terraform](https://www.terraform.io/downloads) installed  
+- 🛠️ AWS CLI configured (`aws configure`)  
+- 🛠️ An EC2 Key Pair  
+- 🛠️ A `.tfvars` file (e.g., `dev.tfvars`) with your specific values  
 
-## Destroy the Infrastructure
-When infrastructure is no longer needed:
+---
 
-1. *Trigger Destroy Workflow*:
-   - Navigate to Actions > Destroy Infrastructure
-   - Select the stage to destroy
-   - Run workflow
+## 🚀 Deployment Steps
 
-2. *Manually Empty S3 Bucket* (Required before destruction):
-   - Go to AWS S3 Console
-   - Find the relevant log bucket
-   - Select and delete all objects
+Follow these steps to deploy the application:  
 
-
-## Workflow Details
-The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It performs the following steps:
-
-1. **Checkout code**:  Uses actions/checkout@v3 to clone the repository's code onto the GitHub Actions runner.
-2. **Configure AWS credentials**: Uses aws-actions/configure-aws-credentials@v1 to set up AWS credentials on the runner using the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets. The AWS region is also specified here.
-3. **Initialize Terraform**: Navigates to the terraform/ directory and runs terraform init to initialize the working directory, download provider plugins, and configure the S3 backend.
-4. **Apply Terraform configuration**: Executes terraform apply -auto-approve to provision the infrastructure defined in the terraform/ directory. This step uses variables (e.g., stage, github_pat) passed from the workflow inputs to customize the deployment.
-5. **Validate app health**: After successful Terraform application, this step sends an HTTP request to the deployed EC2 instance's public IP/DNS on the relevant port (80 or 8080) to confirm the application is running and reachable. This acts as a basic health check.
-
-## Note:-
+### 1️⃣ **Initialize Terraform**  
+Run the following command to initialize Terraform:  
+```bash
+terraform init
 ```
-resource "aws_s3_bucket" "example" {
-  bucket = var.s3_bucket_name 
 
-  #force_destroy = true 
-
-  tags = {
-    Name        = "My bucket"
-    Environment = "Dev"
-  }
-}
+### 2️⃣ **Preview the Plan**  
+Generate and review the execution plan:  
+```bash
+terraform plan -var-file="dev.tfvars"
 ```
-i commented force_destroy part in s3 bucket because Manually Empty the Bucket is Safest 
-This is the safest method, especially for production environments. You manually empty the bucket using the AWS Management Console or the AWS CLI before running terraform destroy.
+
+### 3️⃣ **Apply the Deployment**  
+Deploy the infrastructure:  
+```bash
+terraform apply -var-file="dev.tfvars"
+```
+
+### 4️⃣ **Access the Application**  
+Once deployed, access the app in your browser using the public IP provided in the Terraform output:  
+
+http://<public-ip>
+
+
+### 5️⃣ **Verify Deployment**  
+You should see the message:  
+
+App Deployed Successfully 🎉
+
+
+---
+
+## 📜 Log Storage Info
+
+### ✅ **Application Logs**  
+- **Location:** `s3://<your-bucket-name>/app/logs/`  
+- **Source:** `/home/ec2-user/app.log`  
+
+### ✅ **System Logs**  
+- **Location:** `s3://<your-bucket-name>/system/`  
+- **Source:** `/var/log/cloud-init.log`  
+
+### 🔎 **How to Check Logs**  
+1. Open AWS Console  
+2. Navigate to **S3**  
+3. Browse to your bucket  
+4. Check the `app/logs/` or `system/` folders  
+
+### 🗑️ **Auto-Cleanup**  
+Logs are auto-deleted after 7 days using a lifecycle policy.  
+
+---
+
+## 🔐 IAM Roles
+
+### **Read-Only Role:** `s3_readonly_role`  
+- **Permissions:**  
+    - `s3:ListBucket`  
+    - `s3:GetObject`  
+
+### **Write-Only Role:** `s3_writeonly_role`  
+- **Permissions:**  
+    - `s3:PutObject`  
+    - `s3:CreateBucket`  
+
+ℹ️ **Note:** This role is attached to the EC2 instance for securely writing logs.  
+
+---
+
+## 🧹 Clean-Up
+
+To remove all resources:  
+
+1. **Empty your S3 bucket** via AWS Console  
+2. **Destroy infrastructure** with Terraform:  
+```bash
+terraform destroy -var-file="dev.tfvars"
+```
+
+---  
 
