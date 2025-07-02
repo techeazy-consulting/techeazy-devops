@@ -95,7 +95,7 @@ To simulate an application error and verify the CloudWatch Log Error Alarm and S
  3. Check the email address you subscribed for an alert notification from AWS SNS. You can also view the alarm state in the CloudWatch console.
 
 
-## Recommendattion:-
+## Recommendation:-
 ```
 resource "aws_s3_bucket" "example" {
   bucket = var.s3_bucket_name 
