@@ -20,10 +20,10 @@ resource "aws_instance" "example1" {
     STOP_INSTANCE       = var.stop_after_minutes # Match STOP_INSTANCE in script
     S3_BUCKET_NAME      = var.s3_bucket_name     # Match S3_BUCKET_NAME in script
     AWS_REGION_FOR_SCRIPT = var.aws_region       # NEW: Pass the AWS region from your provider config
-#    GITHUB_TOKEN  = var.github_token
+    GITHUB_TOKEN  = var.github_token
     GIT_REPO_PATH = var.git_repo_path
     CW_AGENT_CONFIG_JSON = templatefile("./config.json", {
-        log_file_path      = var.app_log_file_path         // <-- Now truly a variable!
+        log_file_path      = var.app_log_file_path        
         log_group_name_var = aws_cloudwatch_log_group.app_log_group.name
     })
   }))
@@ -124,7 +124,7 @@ resource "aws_sns_topic" "app_alerts_topic" {
 resource "aws_sns_topic_subscription" "email_subscription" {
   topic_arn = aws_sns_topic.app_alerts_topic.arn
   protocol  = "email"
-  endpoint  = var.email_address # <--- **REPLACE THIS WITH YOUR EMAIL ADDRESS**
+  endpoint  = var.email_address 
 }
 
 output "sns_topic_arn" {
