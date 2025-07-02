@@ -2,12 +2,16 @@ provider "aws" {
   region = var.aws_region
 }
 
+resource "aws_iam_instance_profile" "s3_write_only_profile" {
+  name = "s3_write_only_profile"
+  role = aws_iam_role.s3_write_only_role.name
+}
 
 resource "aws_instance" "example1" {
     ami = var.ami_value
     instance_type = var.instance_type_value
     vpc_security_group_ids = [aws_security_group.mysg.id]
-    iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name 
+    iam_instance_profile   = aws_iam_instance_profile.s3_write_only_profile.name
 
     user_data = base64encode(templatefile("./${var.stage}_script.sh", {
     REPO_URL            = var.repo_url_value
@@ -74,12 +78,10 @@ resource "aws_security_group" "mysg" {
 
 resource "aws_s3_bucket" "example" {
   bucket = var.s3_bucket_name 
-
-  #force_destroy = true 
+  force_destroy = true 
 
   tags = {
-    Name        = "My bucket"
-    Environment = "Dev"
+    Name        = "My S3 Bucket"
   }
 }
 
@@ -125,7 +127,7 @@ resource "aws_iam_role" "s3_creator_uploader_role" {
 
 resource "aws_iam_policy" "s3_creator_uploader_policy" {
   name        = "s3_creator_uploader_policy"
-  description = "Provides permissions to create S3 buckets and upload objects, explicitly denying read/download"
+  description = "Allows EC2 to create bucket and upload logs to S3"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -135,7 +137,7 @@ resource "aws_iam_policy" "s3_creator_uploader_policy" {
         Action   = [
           "s3:CreateBucket", 
           "s3:PutObject",    
-          "s3:PutObjectAcl", 
+          "s3:PutObjectAcl",
         ]
         Resource = "*" 
       },
