@@ -58,7 +58,7 @@
       }
     },
     "append_dimensions": {
-      "InstanceId": "${aws:InstanceId}"
+      "InstanceId": "$${aws:InstanceId}"
     },
     "aggregation_dimensions": [
       [ "InstanceId" ]
@@ -71,7 +71,7 @@
           {
             "file_path": "${log_file_path}",
             "log_group_name": "${log_group_name_var}",
-            "log_stream_name": "{instance_id}",
+            "log_stream_name": "$${instance_id}",
             "timezone": "Local"
           }
         ]

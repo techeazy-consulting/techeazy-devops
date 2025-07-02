@@ -44,7 +44,7 @@ jobs:
           TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
         run: |
           terraform init
-          VAR_FILE="${{ github.event.inputs.stage }}.json"
+          VAR_FILE="config/${{ github.event.inputs.stage }}.json"
           terraform destroy -var-file="$VAR_FILE" --auto-approve \
             -var "stage=${{ github.event.inputs.stage }}"
         working-directory: ./terraform
