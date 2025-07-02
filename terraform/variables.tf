@@ -1,71 +1,49 @@
-variable "aws_region" {
-  description = "The AWS region where resources will be created."
-  type        = string
-  default     = "us-east-1" 
+variable "instance_type" {
+    description = "type of ec2 instance"
+    type = string
+    default = "t2.micro"
+  
 }
 
-variable "ami_value" {
-    description = "value for the ami"
-    type        = string
-    default     = "ami-053b0d53c279acc90" 
+variable "ami_id" {
+    description = "value of ami id"
+    type = string
+  
 }
 
-variable "instance_type_value" {
-    description = "value for instance_type"
-    type        = string
-    default     = "t2.micro"
+variable "subnet_id" {
+    description = "value of subnet id"
+    type = string
+  
 }
 
-variable "java_version_value" {
-    description = "java installation version"
-    type        = string
-    default     = "openjdk-21-jdk-headless"
+variable "key_name" {
+    description = "value of existing keypair"
+    type = string
+  
 }
 
-variable "key_name_value" {
-    description = "name of pem file"
-    type        = string
-    default     = "new-key.pem"
+
+variable "security_group_id" {
+    description = "security grp id"
+  
 }
 
-variable "repo_url_value" {
-    description = "the github url of repository to clone"
-    type        = string
-    default     = "https://github.com/techeazy-consulting/techeazy-devops.git"
-}
-
-variable "repo_dir_name" {
-    description = "the directory name of the repository to clone"
-    type        = string
-    default     = "techeazy-devops"
+variable "repo_url" {
+    description = "url of git repo"
+    type = string
+    default = "https://github.com/techeazy-consulting/techeazy-devops.git"
+  
 }
 
 variable "stage" {
-    description = "The stage of the deployment (e.g., dev, prod)."
-    type        = string
-    default     = "dev"  
+    description = "environment stage(eg. dev,prod)"
+    type = string
+    default = "dev"
+  
 }
 
-variable "stop_after_minutes" {
-    description = "The number of minutes after which the instance should stop."
-    type        = number
-    default     = 5
+variable "bucket_name" {
+    description = "bucket name"
+    type = string 
 }
-
-variable "s3_bucket_name" {
-  description = "Default AWS region for CLI configuration"
-  type        = string
-  default     = "bucket-4254" # Replace with your desired bucket name
-}
-
-variable "github_token" {
-  description = "GitHub token for accessing private repositories"
-  type        = string
-  sensitive = true  
-}
-
-variable "git_repo_path" {
-  description = "Path to the Git repository"
-  type        = string
-  default     = "https://github.com/techeazy-consulting/techeazy-devops.git" # Replace with your actual Git repository path
-} 
