@@ -53,9 +53,13 @@ variable "stop_after_minutes" {
 }
 
 variable "s3_bucket_name" {
-  description = "Default AWS region for CLI configuration"
+  description = "Private bucket name"
   type        = string
-  default     = "bucket-4254" # Replace with your desired bucket name
+  
+  validation {
+    condition     = length(var.s3_bucket_name) > 0
+    error_message = "Bucket name must be provided."
+  }
 }
 
 variable "github_token" {

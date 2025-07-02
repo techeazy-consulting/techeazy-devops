@@ -7,5 +7,5 @@
   "java_version_value": "openjdk-21-jdk-headless",
   "aws_region": "us-east-1",
   "s3_bucket_name": "bucket-4254",
-  "stop_after_minutes": 20
+  "stop_after_minutes": 40
 }
