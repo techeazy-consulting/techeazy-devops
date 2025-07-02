@@ -61,7 +61,6 @@ variable "s3_bucket_name" {
 variable "github_token" {
   description = "GitHub token for accessing private repositories"
   type        = string
-  default = "fsdfdfdssknfksdfksdfk" # Replace with your actual GitHub token
   sensitive = true  
 }
 
