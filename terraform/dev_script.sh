@@ -32,7 +32,7 @@ chmod +x mvnw
 ./mvnw clean package
 
 # Run the app
-nohup $JAVA_HOME/bin/java -jar target/techeazy-devops-0.0.1-SNAPSHOT.jar --server.port=80 > app.log 2>&1 &
+nohup $JAVA_HOME/bin/java -jar target/*.jar > app.log 2>&1 &
 
 # --- Upload cloud-init logs to S3 ---
 sleep 30

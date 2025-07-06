@@ -46,20 +46,16 @@ variable "stage" {
     default     = "dev"  
 }
 
+variable "s3_bucket_name" {
+  description = "Default AWS region for CLI configuration"
+  type        = string
+  default     = "bucket-4254" # Replace with your desired bucket name
+}
+
 variable "stop_after_minutes" {
     description = "The number of minutes after which the instance should stop."
     type        = number
     default     = 5
-}
-
-variable "s3_bucket_name" {
-  description = "Private bucket name"
-  type        = string
-  
-  validation {
-    condition     = length(var.s3_bucket_name) > 0
-    error_message = "Bucket name must be provided."
-  }
 }
 
 variable "github_token" {
