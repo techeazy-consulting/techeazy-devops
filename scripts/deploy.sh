@@ -33,7 +33,7 @@ JAR_PATH="target/techeazy-devops-0.0.1-SNAPSHOT.jar"
 # Run the app if JAR exists
 if [ -f "$JAR_PATH" ]; then
   echo "Running app..."
-  nohup java -jar "$JAR_PATH" --server.port=80 > /home/ec2-user/app.log 2>&1 &
+  sudo nohup java -jar "$JAR_PATH" --server.port=80 > /home/ec2-user/app.log 2>&1 &
 else
   echo "Build failed. JAR file not found."
   exit 1
