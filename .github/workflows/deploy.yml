@@ -26,11 +26,13 @@ jobs:
       - name: Set Stage from Input
         id: set_stage
         run: |
-          if [[ -z "${{ github.event.inputs.stage }}" ]]; then
+          if [[ -z "${INPUT_STAGE}" ]]; then
             echo "❌ Stage input is required."
             exit 1
           fi
-          echo "stage=${{ github.event.inputs.stage }}" >> "$GITHUB_OUTPUT"
+            echo "stage=${INPUT_STAGE}" >> "$GITHUB_OUTPUT"
+        env:
+          INPUT_STAGE: ${{ github.event.inputs.stage }}
 
       - name: Checkout Code
         uses: actions/checkout@v3
