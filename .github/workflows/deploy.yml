@@ -2,15 +2,18 @@ name: Deploy to EC2 via Terraform
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+
   tags:
     - 'deploy-*'
+
   workflow_dispatch:
     inputs:
       stage:
         description: 'Deployment stage (dev, qa, prod)'
         required: true
-        default: 'dev'
+        default: dev
 
 jobs:
   deploy:
