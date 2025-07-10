@@ -1,87 +1,138 @@
-# Assignment 4: CI/CD Multi-Stage Deployment
-
-## Prerequisites
-Before using this project, ensure you have the following:
-
-- *AWS Account*: An active AWS account with programmatic access keys configured.
-- *GitHub Account*: A GitHub account where this repository will be hosted.
-- *GitHub Secrets*: The following secrets must be configured in your GitHub repository under Settings > Secrets > Actions:
-  - AWS_ACCESS_KEY_ID: Your AWS Access Key ID
-  - AWS_SECRET_ACCESS_KEY: Your AWS Secret Access Key
-  - GH_TOKEN: A GitHub Personal Access Token with repo scope
-- *S3 Bucket for Terraform State*: An S3 bucket must be pre-created in your AWS account for storing Terraform state files.
+# 🚀 DevOps Internship Project – AWS EC2, S3, Terraform & GitHub Actions
+This project showcases how to provision, configure, and deploy EC2 instances using Terraform and GitHub Actions. It also includes S3 bucket management, IAM roles, and CI/CD deployment with environment-specific staging.
 
 
-## Project Overview
-This project demonstrates the deployment of an application to an AWS EC2 instance using Terraform and GitHub Actions. It includes CI/CD deployment with different stages such as dev,qa and prod.
+## ✅ Assignments Covered
+
+- Assignment 1: EC2 provisioning with Java install, GitHub repo clone, and app deployment.
+
+- Assignment 2: S3 Bucket creation with lifecycle policies, IAM roles (read-only/write-only), and log uploads.
+
+- Assignment 3: CI/CD pipeline for multi-stage deployments (dev, qa, prod) using GitHub Actions.
 
 
-## Directory Structure
-* `.github/workflows`: Contains deploy.yml and destroy.yml file for CI/CD.
-* `terraform/`: Contains Terraform configuration files for deploying to EC2
+## 🧰 Prerequisites
+- AWS Account (with access key/secret)
 
-## Deployment Steps
+- GitHub Account
 
-### Trigger Deployment Workflow
-1. Navigate to the Actions tab in your GitHub repository
-2. Select the "CI/CD Multi-Stage Deployment" workflow
-3. Click "Run workflow"
-4. Select the desired Deployment Stage (dev, qa, or prod)
-5. Click "Run workflow"
+- GitHub Secrets configured:
 
-### Monitor Deployment
-- The workflow run will start and show progress in GitHub Actions
-- Green checkmarks indicate successful steps
+     - AWS_ACCESS_KEY_ID
 
-### Verify Application Health
-1. Check the "Validate app health" step output
-2. Alternatively, manually verify using the EC2 instance's public IP/DNS:
-   - Port 80 (frontend)
-   - Port 8080 (backend)
+     - AWS_SECRET_ACCESS_KEY
 
-### Access Logs
-Application logs will be pushed to your S3 bucket under stage-specific prefixes:
-s3://your-bucket-name/logs/dev/
-s3://your-bucket-name/logs/qa/
-s3://your-bucket-name/logs/prod/
+     - GH_TOKEN (with repo access)
+
+- S3 bucket already created (for remote Terraform state)
+
+## ✅ Assignment Summary
+📌 **Assignment 1: EC2 Instance Deployment using Terraform**
+     
+  - Provision an EC2 instance using Terraform.
+
+  - Automatically install Java, clone a GitHub repo, and run your app.
+
+  - Configure user_data using a shell script for automation.
+
+📌 **Assignment 2: EC2 + S3 Integration**
+     
+  - Create an S3 bucket with:
+
+       - Private access
+
+       - Lifecycle configuration
+
+  - Assign IAM roles to EC2 with S3 read/write permissions.
+
+  - Logs from EC2 are pushed to the respective stage’s S3 path.
+
+  - Validate S3 access using aws s3 ls and role permissions.
+
+📌 **Assignment 3: CI/CD Multi-Stage Deployment with GitHub Actions**
+
+  - Setup GitHub Actions to handle:
+
+       - Deployment (deploy.yml)
+
+       - Destruction (destroy.yml)
+
+  - Use tags like deploy-dev, deploy-qa, etc., or manual trigger with environment input.
+
+  - Environments: dev, qa, prod
+
+  - Health check added post-deployment to validate the running app on port 80.
+
+## 🚀 How It Works
+
+**1️⃣ Trigger Deployment**
+
+Via GitHub:
+
+ - Go to Actions > Deploy to EC2 via Terraform
+
+ - Click Run workflow
+
+ - Select environment: dev / qa / prod
+
+ - Or push a tag like: deploy-dev, deploy-prod
+
+**2️⃣ GitHub Actions Flow (deploy.yml)**
+
+ - Sets environment stage based on input or tag
+
+ - Initializes Terraform
+
+ - Applies configuration using stage.json and user_data script
+
+ - Waits for EC2 to be ready
+
+ - Performs health check on port 80
+
+**3️⃣ EC2 Instance Setup**
+
+ - Runs user_data shell script:
+
+ - Installs Java
+
+ - Clones your GitHub repository
+
+ - Starts the application
+
+ - Uploads logs to S3 in path:
+
+       s3://your-bucket-name/logs/dev/
+       s3://your-bucket-name/logs/qa/
+       s3://your-bucket-name/logs/prod/
+
+**4️⃣ Monitor Deployment**
+
+  - The workflow run will start and show progress in GitHub Actions
+
+  - Green checkmarks indicate successful steps
+
+**5️⃣ Destroy Infrastructure**
+
+To tear down:
+
+  - Go to Actions > Destroy Infrastructure via Terraform
+
+  - Run workflow and select the stage
 
 
-## Destroy the Infrastructure
-When infrastructure is no longer needed:
+## 🧪 Health Check Logic
 
-1. *Trigger Destroy Workflow*:
-   - Navigate to Actions > Destroy Infrastructure
-   - Select the stage to destroy
-   - Run workflow
+ - After EC2 deployment, GitHub Actions:
 
-2. *Manually Empty S3 Bucket* (Required before destruction):
-   - Go to AWS S3 Console
-   - Find the relevant log bucket
-   - Select and delete all objects
+     - Waits for public IP
+
+     - Pings http://<EC2_IP> on port 80
 
 
-## Workflow Details
-The GitHub Actions workflow is defined in `.github/workflows/deploy.yml`. It performs the following steps:
+## 📌 Notes
+    
+    1. Each stage uses its own .json config and shell script.
 
-1. **Checkout code**:  Uses actions/checkout@v3 to clone the repository's code onto the GitHub Actions runner.
-2. **Configure AWS credentials**: Uses aws-actions/configure-aws-credentials@v1 to set up AWS credentials on the runner using the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets. The AWS region is also specified here.
-3. **Initialize Terraform**: Navigates to the terraform/ directory and runs terraform init to initialize the working directory, download provider plugins, and configure the S3 backend.
-4. **Apply Terraform configuration**: Executes terraform apply -auto-approve to provision the infrastructure defined in the terraform/ directory. This step uses variables (e.g., stage, github_pat) passed from the workflow inputs to customize the deployment.
-5. **Validate app health**: After successful Terraform application, this step sends an HTTP request to the deployed EC2 instance's public IP/DNS on the relevant port (80 or 8080) to confirm the application is running and reachable. This acts as a basic health check.
+    2. Backend state is stored in a pre-created S3 bucket.
 
-## Note:-
-```
-resource "aws_s3_bucket" "example" {
-  bucket = var.s3_bucket_name 
-
-  #force_destroy = true 
-
-  tags = {
-    Name        = "My bucket"
-    Environment = "Dev"
-  }
-}
-```
-i commented force_destroy part in s3 bucket because Manually Empty the Bucket is Safest 
-This is the safest method, especially for production environments. You manually empty the bucket using the AWS Management Console or the AWS CLI before running terraform destroy.
-
+    3. IAM role policies ensure only that instance can access its environment's logs.
