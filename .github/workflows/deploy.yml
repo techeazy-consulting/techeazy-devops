@@ -54,7 +54,7 @@ jobs:
 
 
       - name: Run deployement Script via SSH
-        uses: appleboyssh-action@master
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ env.EC2_PUBLIC_IP}}   
           username: ec2-user
