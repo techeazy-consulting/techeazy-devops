@@ -26,17 +26,15 @@ jobs:
       - name: Set Stage from Tag or Input
         id: set_stage
         run: |
-         if [[ "${GITHUB_REF}" == refs/tags/deploy-* ]]; then
-           STAGE="${GITHUB_REF#refs/tags/deploy-}"
-         elif [[ -n "${INPUT_STAGE}" ]]; then
-           STAGE="${INPUT_STAGE}"
-         else
-           echo "❌ Stage not provided via tag or input"
-           exit 1
-         fi
-           echo "stage=${STAGE}" >> "$GITHUB_OUTPUT"
-        env:
-           INPUT_STAGE: ${{ github.event.inputs.stage }}
+          if [[ "${GITHUB_REF}" == refs/tags/deploy-* ]]; then
+            STAGE="${GITHUB_REF#refs/tags/deploy-}"
+          elif [[ -n "${{ github.event.inputs.stage }}" ]]; then
+            STAGE="${{ github.event.inputs.stage }}"
+          else
+            echo "❌ Stage not provided via tag or input"
+            exit 1
+          fi
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
 
       - name: Checkout Code
         uses: actions/checkout@v3
