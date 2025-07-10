@@ -95,19 +95,19 @@ jobs:
         run: |
           IP=${{ steps.get_ip.outputs.ip }}
 
-          echo "Waiting 3 more minutes for app to fully start..."
-          sleep 180
+          echo "Waiting 2 more minutes for app to start fully..."
+          sleep 120
 
           echo "--- Performing health check on http://$IP ..."
           for i in {1..5}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$IP)
             echo "Attempt $i: HTTP $STATUS"
             if [ "$STATUS" = "200" ]; then
-              echo "✅ App is healthy!"
+              echo "✅ SUCCESS: App is healthy!"
               exit 0
             fi
             sleep 10
           done
 
-          echo "❌ App failed health check after 5 tries."
+          echo "❌ FAILURE: App failed health check after 5 tries."
           exit 1
