@@ -13,11 +13,7 @@ on:
       stage:
         description: 'Deployment stage (dev, qa, prod)'
         required: true
-        default: 'dev'
-        options:
-          - dev
-          - qa
-          - prod 
+        default: dev
 
 jobs:
   deploy:
