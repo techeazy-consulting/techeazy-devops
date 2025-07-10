@@ -8,7 +8,7 @@ resource "aws_instance" "instance1" {
     subnet_id = var.subnet_id
     key_name = var.key_name
     security_groups = [var.security_group_id]
-    user_data = templatefile("${path.module}/scripts/user_data.tmpl.sh", {
+    user_data = templatefile("${path.module}/user_data.tmpl.sh", {
     bucket_name = var.bucket_name
   })
 
