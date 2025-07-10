@@ -73,7 +73,7 @@ jobs:
         run: |
           echo "Waiting for EC2 to initialise and get Public IP..."
 
-          for i in {1..5}; do
+          for i in {1..15}; do
            IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=MyInstance-${{ steps.set_stage.outputs.stage }}" \
             --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
