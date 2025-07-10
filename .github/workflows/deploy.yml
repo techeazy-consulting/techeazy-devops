@@ -68,7 +68,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.INSTANCE_KEY}} 
           script: |
-            cd /home/ec2-user/techeazy-devopd/scripts
+            cd /home/ec2-user/techeazy-devops/scripts
             chmod +x deploy.sh
             ./deploy.sh techeazy-bucket
 
@@ -85,3 +85,4 @@ jobs:
           done
           echo "App health check failed" 
           exit 1
+          
