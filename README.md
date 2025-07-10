@@ -92,7 +92,7 @@ App Deployed Successfully 🎉
 3. Browse to your bucket  
 4. Check the `app/logs/` or `system/` folders  
 
-### 🗑️ **Auto-Cleanup**  
+## 🗑️ **Auto-Cleanup**  
 Logs are auto-deleted after 7 days using a lifecycle policy.  
 
 ---
@@ -125,3 +125,4 @@ terraform destroy -var-file="dev.tfvars"
 
 ---  
 
+# trigger
