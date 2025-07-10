@@ -50,7 +50,7 @@ jobs:
           ip=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=techeazy-instance" \
             --query "Reservations[*].Instances[*].PublicIpAddress" \
-            --output text)
+            --output text | tr -d '\r')
             
           echo "EC2_PUBLIC_IP=$ip" >> $GITHUB_ENV  
 
