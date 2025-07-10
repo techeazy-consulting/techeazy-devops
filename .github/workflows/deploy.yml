@@ -49,7 +49,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          aws-region: us-east-1
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -73,7 +73,7 @@ jobs:
         run: |
           echo "Waiting for EC2 to initialise and get Public IP..."
 
-          for i in {1..15}; do
+          for i in {1..10}; do
            IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=MyInstance-${{ steps.set_stage.outputs.stage }}" \
             --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
@@ -84,8 +84,8 @@ jobs:
             exit 0
            fi
 
-           echo "Attempt $i: IP not available yet. Retrying in 30 seconds..."
-           sleep 30
+           echo "Attempt $i: IP not available yet. Retrying in 60 seconds..."
+           sleep 60
           done
 
           echo "❌ EC2 IP not available after retries."
