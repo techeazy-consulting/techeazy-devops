@@ -71,14 +71,25 @@ jobs:
       - name: Wait for EC2 to initialise and get IP
         id: get_ip
         run: |
-          echo "Waiting for EC2 to initialise..."
-          sleep 120
+          echo "Waiting for EC2 to initialise and get Public IP..."
 
-          IP=$(aws ec2 describe-instances \
+          for i in {1..5}; do
+           IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=MyInstance-${{ steps.set_stage.outputs.stage }}" \
             --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
-          echo "Public IP: $IP"
-          echo "ip=$IP" >> "$GITHUB_OUTPUT"
+
+           if [[ -n "$IP" ]]; then
+            echo "✅ EC2 IP acquired: $IP"
+            echo "ip=$IP" >> "$GITHUB_OUTPUT"
+            exit 0
+           fi
+
+           echo "Attempt $i: IP not available yet. Retrying in 30 seconds..."
+           sleep 30
+          done
+
+          echo "❌ EC2 IP not available after retries."
+          exit 1
 
       - name: Health Check - App on Port 80
         run: |
