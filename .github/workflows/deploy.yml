@@ -5,7 +5,7 @@ on:
     branches:
       - master
     tags:
-      - 'deploy-*'  
+      - 'deploy-*'
 
   workflow_dispatch:
     inputs:
@@ -16,25 +16,21 @@ on:
         options:
           - dev
           - qa
-          - prod 
+          - prod
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set Stage from Tag or Input
+      - name: Set Stage from Input
         id: set_stage
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/deploy-* ]]; then
-            STAGE=$(echo "${GITHUB_REF#refs/tags/deploy-}")
-          elif [[ "${{ github.event.inputs.stage }}" != "" ]]; then
-            STAGE="${{ github.event.inputs.stage }}"
-          else
-            echo "❌ No stage provided."
+          if [[ -z "${{ github.event.inputs.stage }}" ]]; then
+            echo "❌ Stage input is required."
             exit 1
           fi
-          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+          echo "stage=${{ github.event.inputs.stage }}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -67,7 +63,7 @@ jobs:
         id: get_ip
         run: |
           echo "Waiting for EC2 to initialise..."
-          sleep 90
+          sleep 120
 
           IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=MyInstance-${{ steps.set_stage.outputs.stage }}" \
