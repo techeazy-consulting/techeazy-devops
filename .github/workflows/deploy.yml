@@ -73,7 +73,7 @@ jobs:
         run: |
           echo "Waiting for EC2 to initialise and get Public IP..."
 
-          for i in {1..10}; do
+          for i in {1..5}; do
            IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=MyInstance-${{ steps.set_stage.outputs.stage }}" \
             --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
@@ -94,6 +94,9 @@ jobs:
       - name: Health Check - App on Port 80
         run: |
           IP=${{ steps.get_ip.outputs.ip }}
+
+          echo "Waiting 3 more minutes for app to fully start..."
+          sleep 180
 
           echo "--- Performing health check on http://$IP ..."
           for i in {1..5}; do
