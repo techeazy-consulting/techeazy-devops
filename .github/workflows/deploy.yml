@@ -95,8 +95,8 @@ jobs:
         run: |
           IP=${{ steps.get_ip.outputs.ip }}
 
-          echo "Waiting 2 more minutes for app to start fully..."
-          sleep 120
+          echo "Waiting 3 more minutes for app to start fully..."
+          sleep 180
 
           echo "--- Performing health check on http://$IP ..."
           for i in {1..5}; do
