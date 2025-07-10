@@ -26,16 +26,19 @@ jobs:
       - name: Set Stage from Tag or Input
         id: set_stage
         env:
+          EVENT_NAME: ${{ github.event_name }}
           INPUT_STAGE: ${{ github.event.inputs.stage }}
         run: |
+          echo "Event: $EVENT_NAME"
           if [[ "${GITHUB_REF}" == refs/tags/deploy-* ]]; then
             STAGE="${GITHUB_REF#refs/tags/deploy-}"
-          elif [[ -n "${INPUT_STAGE}" ]]; then
+          elif [[ "${EVENT_NAME}" == "workflow_dispatch" && -n "${INPUT_STAGE}" ]]; then
             STAGE="${INPUT_STAGE}"
           else
             echo "❌ Stage not provided via tag or input"
             exit 1
           fi
+          echo "✅ Stage detected: $STAGE"
           echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
 
       - name: Checkout Code
