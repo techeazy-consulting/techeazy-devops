@@ -72,11 +72,9 @@ jobs:
           username: ec2-user
           key: ${{ secrets.INSTANCE_KEY }}
           script: |
-            echo "Listing /home/ec2-user:"
-            ls /home/ec2-user
-            echo "Listing repo folder:"
-            ls /home/ec2-user/techeazy-devops
-            cd /home/ec2-user/techeazy-devops/scripts
+            cd /home/ec2-user
+            git clone --branch feature/devops-assignment-3 https://github.com/sohampatil44/techeazy-devops.git || true
+            cd techeazy-devops/scripts
             chmod +x deploy.sh
             ./deploy.sh techeazy-bucket
 
