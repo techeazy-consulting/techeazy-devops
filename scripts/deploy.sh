@@ -1,53 +1,58 @@
+#!/bin/bash
 
 set -e
 
-# for logging all output
-
+# For logging all output
 exec > >(tee /var/log/deploy.log | logger -t deploy-script) 2>&1
 
-#check for bucket name
-
+# Check for bucket name
 if [ -z "$1" ]; then
   echo "Usage: ./deploy.sh <bucket_name>"
   exit 1
-
 fi
 
 bucket_name=$1
 
-#install java and git
+echo "Starting deployment process..."
 
-sudo yum update -y
-sudo yum install -y java-21-amazon-corretto git
+# Stop any existing Java application
+echo "Stopping existing application..."
+pkill -f "java.*techeazy" || echo "No existing application to stop"
 
-#clone the repo
+# Pull latest changes
+echo "Pulling latest changes..."
+git pull origin main
 
-git clone https://github.com/sohampatil44/techeazy-devops.git || true
-
-cd techeazy-devops
-
-# give ownership to ec2-user
-sudo chown -R ec2-user:ec2-user .
-
-# make maven wrapper executable
-chmod +x mvnw
-
-# build project
-sudo -u ec2-user ./mvnw clean package
+# Build project
+echo "Building project..."
+./mvnw clean package -DskipTests
 
 JAR_PATH="target/techeazy-devops-0.0.1-SNAPSHOT.jar"
 
 if [ -f "$JAR_PATH" ]; then
-  echo "Running app..."
-  nohup java -jar "$JAR_PATH" --server.port=80 > /home/ec2-user/app.log 2>&1 &
+  echo "JAR built successfully. Starting application..."
+  
+  # Start the application on port 80
+  nohup sudo java -jar "$JAR_PATH" --server.port=80 > /home/ec2-user/app.log 2>&1 &
+  
+  # Wait for application to start
+  sleep 10
+  
+  # Check if application is running
+  if pgrep -f "java.*techeazy" > /dev/null; then
+    echo "Application started successfully"
+  else
+    echo "Failed to start application"
+    exit 1
+  fi
 else
-  echo "Build failed."
+  echo "Build failed. JAR file not found."
   exit 1
-
 fi
 
 # Upload logs to S3 bucket
+echo "Uploading logs to S3..."
+aws s3 cp /home/ec2-user/app.log s3://${bucket_name}/app/logs/ || echo "Failed to upload app.log"
+aws s3 cp /var/log/deploy.log s3://${bucket_name}/app/logs/ || echo "Failed to upload deploy.log"
 
-aws s3 cp /home/ec2-user/app.log s3://${bucket_name}/app/logs/
-aws s3 cp /var/log/cloud-init.log s3://${bucket_name}/system/ 
-
+echo "Deployment completed successfully"
