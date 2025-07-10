@@ -1,74 +1,68 @@
-name: Deploy to EC2
+name: EC2 Deploy via terraform
 
 on:
-  workflow_dispatch:
-    inputs:
-      stage:
-        description: 'Deployment stage'
-        required: true
-        default: 'dev'
-        options:
-          - dev
-          - qa
-          - prod 
- 
+  push:
+    branches:
+      - main
+
+    tags:
+      - deploy-dev
+      - deploy-prod
+
 jobs:
   deploy:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
-    steps:
-      - name: Validate input
-        run: |
-          if [[ "${{ github.event.inputs.stage }}" != "dev" && "${{ github.event.inputs.stage }}" != "qa" && "${{ github.event.inputs.stage }}" != "prod" ]]; then
-            echo "Invalid input: ${{ github.event.inputs.stage }}. Please use one of the following: dev, qa, prod."
-            exit 1
-          fi
-          
-      - name: Checkout code
-        uses: actions/checkout@v2
+    
+    
+    env:
+      AWS_REGION: us-east-1
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        
+        with: 
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-          aws-output: json
+          aws-region: ${{ env.AWS_REGION}}
 
-      - name: Initialize Terraform
-        uses: hashicorp/setup-terraform@v1
+      - name: Terraform init
+        run: terraform init
+        
+      - name: Terraform apply
+        run: terraform apply -auto-approve -var-file="dev.tfvars" 
+        
+      - name: Get EC2 Public IP
+        id: ec2_ip
+        run: |
+          ip=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=techeazy-instance" \
+            --query "Reservations[*].Instances[*].PublicIpAddress" \
+            -- output text)
+            
+          echo "EC2_PUBLIC_IP=$ip" >> $GITHUB_ENV  
+
+
+      - name: Wait for EC2 SSH
+        run: |
+          sleep 60
+          echo "Waiting for ec2 to be ready.."
+
+
+      - name: Run deployement Script via SSH
+        uses: appleboyssh-action@master
         with:
-          terraform_version: '1.2.3'
+          host: ${{ env.EC2_PUBLIC_IP}}   
+          username: ec2-user
+          key: ${{ secrets.INSTANCE_KEY}} 
+          script: |
+            chmod +x ~/scripts/deploy.sh
+            ~/scripts/deploy.sh techeazy-bucket
 
-      - name: Apply Terraform configuration
-        # Use the 'env' block to pass the GitHub token as a Terraform variable
-        env:
-          # Terraform automatically picks up environment variables prefixed with TF_VAR_
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+      - name: Verfiy App Health
         run: |
-          terraform init
-          terraform validate
-          VAR_FILE="${{ github.event.inputs.stage }}.json"
-          terraform apply -var-file="$VAR_FILE" --auto-approve \
-            -var "stage=${{ github.event.inputs.stage }}" \
-            -var "github_token=${{ secrets.GH_TOKEN }}"
-        working-directory: ./terraform # Ensure this path is correct for your Terraform files
-
-
-      - name: Validate app health
-        run: |
-          VAR_STAGE="${{ github.event.inputs.stage }}"
-          EC2_PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance-"$VAR_STAGE"" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
-          echo "--- Waiting 120 seconds for the application to initialize..."
-          sleep 120
-          echo "--- Wait complete. Starting health checks."
-          
-          # 4. Perform the frontend application health check.
-          echo "--- Checking frontend application health on port 80..."
-          if curl -f http://$EC2_PUBLIC_IP:80; then
-            echo "✅ SUCCESS: Frontend application is healthy and responding on port 80."
-          else
-            echo "❌ FAILURE: Frontend application is not responding or returned an error."
-            exit 1 # Fail the step if the curl command fails.
-          fi
-
-         
+          curl --fail http://${{ env.EC2_PUBLIC_IP}} || exit 1      
