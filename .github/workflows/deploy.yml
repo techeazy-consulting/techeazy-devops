@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - master
-
-  tags:
-    - 'deploy-*'
+    tags:
+      - 'deploy-*'  
 
   workflow_dispatch:
     inputs:
