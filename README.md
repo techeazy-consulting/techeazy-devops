@@ -113,7 +113,7 @@ Logs are auto-deleted after 7 days using a lifecycle policy.
 
 ---
 
-## 🧹 Clean-Up
+### 🧹 Clean-Up
 
 To remove all resources:  
 
