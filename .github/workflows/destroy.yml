@@ -1,4 +1,4 @@
-name: Destroy EC2 via Terraform
+name: Destroy Infrastructure via Terraform
 
 on:
   workflow_dispatch:
@@ -6,23 +6,13 @@ on:
       stage:
         description: 'Environment to destroy (dev, qa, prod)'
         required: true
-        default: 'dev'
-        options:
-          - dev
-          - qa
-          - prod
+        default: dev
 
 jobs:
   destroy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set Stage
-        id: set_stage
-        run: |
-          STAGE="${{ github.event.inputs.stage }}"
-          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
-
       - name: Checkout Code
         uses: actions/checkout@v3
 
@@ -46,7 +36,6 @@ jobs:
           terraform init
           terraform validate
           terraform destroy -auto-approve \
-            -var-file="${{ steps.set_stage.outputs.stage }}.json" \
-            -var="stage=${{ steps.set_stage.outputs.stage }}" \
+            -var-file="${{ github.event.inputs.stage }}.json" \
+            -var="stage=${{ github.event.inputs.stage }}" \
             -var="github_token=${{ secrets.GH_TOKEN }}"
-
