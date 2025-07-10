@@ -1,3 +1,6 @@
+
+
+
 provider "aws" {
     region = "us-east-1"
 }
@@ -20,6 +23,7 @@ resource "aws_instance" "instance1" {
     }
   
 }
+
 
 #IAM Role 1: Read only S-3
 

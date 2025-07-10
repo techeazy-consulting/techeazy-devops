@@ -1,128 +1,75 @@
-# 🚀 Techeazy DevOps Deployment Guide
+````markdown
+# 🚀 Techeazy DevOps Assignment 3 - Fully Automated EC2 App Deployment
 
-Easily deploy a **Spring Boot** app on **AWS EC2** using **Terraform**!  
-✅ Uses **Java 21**  
-✅ Runs on **port 80**  
-✅ Stores logs in a **private S3 bucket** with **auto-deletion after 7 days**  
-✅ Secure with **IAM roles**
+This project automates the complete deployment of a Spring Boot application on an AWS EC2 instance using **Terraform** and **GitHub Actions**. It ensures all logs are stored in **S3**, enforces proper IAM roles, and the deployment is triggered seamlessly on every push or via the GitHub Actions UI — no manual steps needed!
 
 ---
 
-## 🛠️ Prerequisites
+## ✅ Features
 
-Make sure you have the following ready:
-
-- ✅ [Terraform](https://www.terraform.io/downloads) installed  
-- ✅ AWS CLI configured (`aws configure`)  
-- ✅ An EC2 Key Pair  
-- ✅ A `.tfvars` file (e.g., `dev.tfvars`) with your specific values  
-
----
-
-# 🚀 Techeazy DevOps Deployment Guide
-
-Easily deploy a **Spring Boot** app on **AWS EC2** using **Terraform**!  
-✅ **Java 21**  
-✅ **Port 80**  
-✅ **Private S3 bucket** for logs with **auto-deletion after 7 days**  
-✅ **IAM roles** for security  
+- 🌐 **EC2 Instance** with Java 21 + Spring Boot App exposed on **port 80**
+- 📦 **Terraform** code handles all infrastructure provisioning
+- ⚙️ **GitHub Actions**: CI/CD pipeline auto-deploys on push or manual trigger
+- 🔐 **IAM Roles**:
+  - Read-only role for log readers
+  - Write-only role for the EC2 app instance
+- 📁 **Logs automatically uploaded to S3**:
+  - `/app/logs/app.log`
+  - `/system/cloud-init.log`
+- 🗑️ **S3 Lifecycle Rule**: Logs are auto-deleted after 7 days
 
 ---
 
-## 🛠️ Prerequisites
+## 📦 Prerequisites
 
-Make sure you have the following ready:  
+Before deployment, ensure:
 
-- 🛠️ [Terraform](https://www.terraform.io/downloads) installed  
-- 🛠️ AWS CLI configured (`aws configure`)  
-- 🛠️ An EC2 Key Pair  
-- 🛠️ A `.tfvars` file (e.g., `dev.tfvars`) with your specific values  
+1. Go to your GitHub repo → **Settings** → **Secrets and Variables** → **Actions**
+2. Add these secrets:
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+   - `INSTANCE_KEY` #for this the value is all the content of your key pair.
 
----
-
-## 🚀 Deployment Steps
-
-Follow these steps to deploy the application:  
-
-### 1️⃣ **Initialize Terraform**  
-Run the following command to initialize Terraform:  
-```bash
-terraform init
-```
-
-### 2️⃣ **Preview the Plan**  
-Generate and review the execution plan:  
-```bash
-terraform plan -var-file="dev.tfvars"
-```
-
-### 3️⃣ **Apply the Deployment**  
-Deploy the infrastructure:  
-```bash
-terraform apply -var-file="dev.tfvars"
-```
-
-### 4️⃣ **Access the Application**  
-Once deployed, access the app in your browser using the public IP provided in the Terraform output:  
-
-http://<public-ip>
-
-
-### 5️⃣ **Verify Deployment**  
-You should see the message:  
-
-App Deployed Successfully 🎉
-
+3. These credentials must have permissions for EC2, S3, and IAM resource management.
 
 ---
 
-## 📜 Log Storage Info
+## 🚀 How to Deploy
 
-### ✅ **Application Logs**  
-- **Location:** `s3://<your-bucket-name>/app/logs/`  
-- **Source:** `/home/ec2-user/app.log`  
+You have **two options**:
 
-### ✅ **System Logs**  
-- **Location:** `s3://<your-bucket-name>/system/`  
-- **Source:** `/var/log/cloud-init.log`  
+### Option 1: Auto Deploy on Push
 
-### 🔎 **How to Check Logs**  
-1. Open AWS Console  
-2. Navigate to **S3**  
-3. Browse to your bucket  
-4. Check the `app/logs/` or `system/` folders  
+- Push any commit to your branch (`feature/devops-assignment-3`) to trigger deployment.
 
-## 🗑️ **Auto-Cleanup**  
-Logs are auto-deleted after 7 days using a lifecycle policy.  
+### Option 2: Manual Trigger
 
----
-
-### 🔐 IAM Roles
-
-### **Read-Only Role:** `s3_readonly_role`  
-- **Permissions:**  
-    - `s3:ListBucket`  
-    - `s3:GetObject`  
-
-### **Write-Only Role:** `s3_writeonly_role`  
-- **Permissions:**  
-    - `s3:PutObject`  
-    - `s3:CreateBucket`  
-
-ℹ️ **Note:** This role is attached to the EC2 instance for securely writing logs.  
+1. Go to the **Actions** tab on GitHub
+2. Select **“EC2 Deploy via terraform”**
+3. Click **“Run workflow”**
+4. Watch the logs — Terraform will:
+   - Provision EC2 and S3
+   - Output the **public IP** (see `Terraform Apply` step)
+   - Build and launch the app
 
 ---
 
-### 🧹 Clean-Up
+## 🌐 Access the App
 
-To remove all resources:  
+After deployment:
 
-1. **Empty your S3 bucket** via AWS Console  
-2. **Destroy infrastructure** with Terraform:  
-```bash
-terraform destroy -var-file="dev.tfvars"
-```
+1. Open **GitHub → Actions**
+2. Click on the latest successful **Deploy workflow run**
+3. Scroll to the **Terraform Apply** step logs
+4. Look for output like:
 
----  
+   ```
+   Outputs:
 
-# trigger
+   ec2_public_ip = "YOUR_PUBLIC_IP"
+   ```
+
+5. Visit [http://YOUR_PUBLIC_IP](http://YOUR_PUBLIC_IP) in your browser — you should see the app running! 🎉
+
+---
+````
