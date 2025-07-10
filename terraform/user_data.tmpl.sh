@@ -18,7 +18,8 @@ yum install -y java-21-amazon-corretto git
 cd /home/ec2-user
 
 # Clone the official repo
-git clone https://github.com/techeazy-consulting/techeazy-devops.git
+git clone https://github.com/sohampatil44/techeazy-devops.git
+
 cd techeazy-devops
 
 # Set proper ownership

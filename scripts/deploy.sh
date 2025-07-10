@@ -22,7 +22,7 @@ sudo yum install -y java-21-amazon-corretto git
 
 #clone the repo
 
-git clone https://github.com/techeazy-consulting/techeazy-devops.git || true
+git clone https://github.com/sohampatil44/techeazy-devops.git || true
 
 cd techeazy-devops
 
