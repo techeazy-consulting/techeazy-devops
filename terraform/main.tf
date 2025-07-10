@@ -101,6 +101,11 @@ resource "aws_iam_role_policy_attachment" "read_only_attach" {
   policy_arn = aws_iam_policy.s3_read_only_policy.arn
 }
 
+resource "aws_iam_instance_profile" "read_only_instance_profile" {
+  name = "readonly-ec2-profile-${var.stage}"
+  role = aws_iam_role.s3_read_only_role.name
+}
+
 # S3 Bucket (private)
 resource "aws_s3_bucket" "example" {
   bucket = local.config.s3_bucket_name
@@ -184,6 +189,27 @@ resource "aws_instance" "example1" {
   }
 
   depends_on = [aws_s3_bucket.example]
+}
+
+# ReadOnly EC2 Instance and list the S3 bucket content
+resource "aws_instance" "readonly_ec2" {
+  count         = var.enable_readonly_ec2 ? 1 : 0
+  ami           = local.config.ami_value
+  instance_type = local.config.instance_type_value
+  key_name      = local.config.key_name_value
+
+  iam_instance_profile = aws_iam_instance_profile.read_only_instance_profile.name
+
+  user_data = base64encode(templatefile("${path.module}/readonly_script.sh", {
+    BUCKET_NAME           = local.config.s3_bucket_name,
+    AWS_REGION_FOR_SCRIPT = local.config.aws_region
+  }))
+
+  tags = {
+    Name = "readonly-ec2-${var.stage}"
+  }
+
+  vpc_security_group_ids = [aws_security_group.mysg.id]
 }
 
 

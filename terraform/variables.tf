@@ -68,4 +68,10 @@ variable "git_repo_path" {
   description = "Path to the Git repository"
   type        = string
   default     = "https://github.com/abhinayakumar130/tech_eazy_devops_abhinayakumar130.git" # Replace with your actual Git repository path
-} 
+}
+
+variable "enable_readonly_ec2" {
+  type    = bool
+  default = false
+}
+

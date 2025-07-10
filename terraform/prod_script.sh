@@ -36,11 +36,11 @@ nohup $JAVA_HOME/bin/java -jar target/*.jar > app.log 2>&1 &
 
 # --- Upload cloud-init logs to S3 ---
 sleep 30
-aws s3 cp /var/log/cloud-init-output.log "s3://${S3_BUCKET_NAME}/logs/dev/cloud-init-output-$(hostname)-$(date +%Y%m%d%H%M%S).log" 
+aws s3 cp /var/log/cloud-init-output.log "s3://${S3_BUCKET_NAME}/logs/prod/cloud-init-output-$(hostname)-$(date +%Y%m%d%H%M%S).log" 
     --region "${AWS_REGION_FOR_SCRIPT}" || true # CRITICAL: --region must be here!
 echo "Cloud-init log upload attempted."
 
-aws s3 cp app.log "s3://${S3_BUCKET_NAME}/logs/dev/app-$(hostname)-$(date +%Y%m%d%H%M%S).log" \
+aws s3 cp app.log "s3://${S3_BUCKET_NAME}/logs/prod/app-$(hostname)-$(date +%Y%m%d%H%M%S).log" \
     --region "${AWS_REGION_FOR_SCRIPT}" || true # CRITICAL: --region must be here!
 echo "Application log upload attempted."
 
