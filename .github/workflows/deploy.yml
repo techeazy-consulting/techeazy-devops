@@ -50,7 +50,7 @@ jobs:
           ip=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=techeazy-instance" \
             --query "Reservations[*].Instances[*].PublicIpAddress" \
-            -- output text)
+            --output text)
             
           echo "EC2_PUBLIC_IP=$ip" >> $GITHUB_ENV  
 
@@ -61,16 +61,27 @@ jobs:
           echo "Waiting for ec2 to be ready.."
 
 
-      - name: Run deployement Script via SSH
+      - name: Run Deployement Script via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ env.EC2_PUBLIC_IP}}   
           username: ec2-user
           key: ${{ secrets.INSTANCE_KEY}} 
           script: |
-            chmod +x ~/scripts/deploy.sh
-            ~/scripts/deploy.sh techeazy-bucket
+            cd /home/ec2-user/techeazy-devopd/scripts
+            chmod +x deploy.sh
+            ./deploy.sh techeazy-bucket
 
-      - name: Verfiy App Health
+      - name: Verify App Health
         run: |
-          curl --fail http://${{ env.EC2_PUBLIC_IP}} || exit 1      
+          for i in {1..5}: do
+            if curl --fail http://${{ env.EC2_PUBLIC_IP }}; then
+               echo "App is healthy"
+               exit 0
+            fi
+            echo "Retrying in 5s..."
+            sleep 5
+            
+          done
+          echo "App health check failed" 
+          exit 1

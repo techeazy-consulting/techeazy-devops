@@ -35,13 +35,13 @@ chmod +x mvnw
 # build project
 sudo -u ec2-user ./mvnw clean package
 
-JAR_PATH ="target/techeazy-devops-0.0.1-SNAPSHOT.jar
+JAR_PATH="target/techeazy-devops-0.0.1-SNAPSHOT.jar"
 
 if [ -f "$JAR_PATH" ]; then
   echo "Running app..."
   nohup java -jar "$JAR_PATH" --server.port=80 > /home/ec2-user/app.log 2>&1 &
 else
-  echo "Build failed.
+  echo "Build failed."
   exit 1
 
 fi
