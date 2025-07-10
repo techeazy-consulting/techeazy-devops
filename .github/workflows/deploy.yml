@@ -3,7 +3,7 @@ name: Deploy to EC2 via Terraform
 on:
   push:
     branches:
-      - main
+      - master
 
   tags:
     - 'deploy-*'
@@ -13,7 +13,11 @@ on:
       stage:
         description: 'Deployment stage (dev, qa, prod)'
         required: true
-        default: dev
+        default: 'dev'
+        options:
+          - dev
+          - qa
+          - prod 
 
 jobs:
   deploy:
