@@ -1,18 +1,12 @@
-name: Deploy to EC2 via Terraform
+name: Deploy to EC2
 
 on:
-  push:
-    branches:
-      - master
-    tags:
-      - 'deploy-*'
-
   workflow_dispatch:
     inputs:
       stage:
-        description: 'Deployment stage (dev, qa, prod)'
+        description: 'Deployment stage'
         required: true
-        default: dev
+        default: 'dev'
         options:
           - dev
           - qa
@@ -23,27 +17,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set Stage from Tag or Input
-        id: set_stage
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          INPUT_STAGE: ${{ github.event.inputs.stage }}
+      # Step 1: Validate user input
+      - name: Validate input
         run: |
-          echo "Event: $EVENT_NAME"
-          if [[ "${GITHUB_REF}" == refs/tags/deploy-* ]]; then
-            STAGE="${GITHUB_REF#refs/tags/deploy-}"
-          elif [[ "${EVENT_NAME}" == "workflow_dispatch" && -n "${INPUT_STAGE}" ]]; then
-            STAGE="${INPUT_STAGE}"
-          else
-            echo "❌ Stage not provided via tag or input"
+          STAGE="${{ github.event.inputs.stage }}"
+          if [[ "$STAGE" != "dev" && "$STAGE" != "qa" && "$STAGE" != "prod" ]]; then
+            echo "❌ Invalid stage: $STAGE. Please choose from dev, qa, or prod."
             exit 1
           fi
-          echo "✅ Stage detected: $STAGE"
-          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+          echo "✅ Valid stage: $STAGE"
 
-      - name: Checkout Code
+      # Step 2: Checkout the code from GitHub
+      - name: Checkout code
         uses: actions/checkout@v3
 
+      # Step 3: Configure AWS credentials from GitHub Secrets
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -51,63 +39,50 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # Step 4: Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: '1.6.0'
 
-      - name: Terraform Init and Apply
+      # Step 5: Run Terraform Init and Apply
+      - name: Apply Terraform configuration
         env:
           TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+        working-directory: ./terraform
         run: |
-          cd terraform
           terraform init
           terraform validate
+
           terraform apply -auto-approve \
-            -var-file="${{ steps.set_stage.outputs.stage }}.json" \
-            -var="stage=${{ steps.set_stage.outputs.stage }}" \
+            -var-file="${{ github.event.inputs.stage }}.json" \
+            -var="stage=${{ github.event.inputs.stage }}" \
             -var="github_token=${{ secrets.GH_TOKEN }}"
 
-      - name: Wait for EC2 to initialise and get IP
-        id: get_ip
+      # Step 6: Health check after EC2 deployment
+      - name: Validate app health
         run: |
-          echo "Waiting for EC2 to initialise and get Public IP..."
+          STAGE="${{ github.event.inputs.stage }}"
 
-          for i in {1..5}; do
-           IP=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=MyInstance-${{ steps.set_stage.outputs.stage }}" \
-            --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+          echo "--- Fetching EC2 Public IP for stage: $STAGE"
+          EC2_PUBLIC_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=MyInstance-$STAGE" \
+            --query 'Reservations[].Instances[].PublicIpAddress' \
+            --output text)
 
-           if [[ -n "$IP" ]]; then
-            echo "✅ EC2 IP acquired: $IP"
-            echo "ip=$IP" >> "$GITHUB_OUTPUT"
-            exit 0
-           fi
+          if [[ -z "$EC2_PUBLIC_IP" ]]; then
+            echo "❌ Could not retrieve EC2 Public IP."
+            exit 1
+          fi
 
-           echo "Attempt $i: IP not available yet. Retrying in 60 seconds..."
-           sleep 60
-          done
-
-          echo "❌ EC2 IP not available after retries."
-          exit 1
-
-      - name: Health Check - App on Port 80
-        run: |
-          IP=${{ steps.get_ip.outputs.ip }}
-
-          echo "Waiting 3 more minutes for app to start fully..."
+          echo "✅ EC2 Public IP: $EC2_PUBLIC_IP"
+          echo "--- Waiting 3 minutes for the app to start..."
           sleep 180
 
-          echo "--- Performing health check on http://$IP ..."
-          for i in {1..5}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$IP)
-            echo "Attempt $i: HTTP $STATUS"
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ SUCCESS: App is healthy!"
-              exit 0
-            fi
-            sleep 10
-          done
-
-          echo "❌ FAILURE: App failed health check after 5 tries."
-          exit 1
+          echo "--- Performing health check at http://$EC2_PUBLIC_IP:80"
+          if curl -f http://$EC2_PUBLIC_IP:80; then
+            echo "✅ App is healthy and responding!"
+          else
+            echo "❌ App is not responding on port 80."
+            exit 1
+          fi
