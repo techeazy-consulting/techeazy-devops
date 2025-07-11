@@ -57,15 +57,15 @@ jobs:
       # Step 5: Run Terraform Init and Apply
       - name: Apply Terraform configuration
         env:
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+         TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
         working-directory: ./terraform
         run: |
           terraform init
           terraform validate
 
           terraform apply -auto-approve \
-            -var-file="${{ github.event.inputs.stage }}.json" \
-            -var="stage=${{ github.event.inputs.stage }}" \
+            -var-file="${{ steps.set_stage.outputs.stage }}.json" \
+            -var="stage=${{ steps.set_stage.outputs.stage }}" \
             -var="github_token=${{ secrets.GH_TOKEN }}"
 
       # Step 6: Perform health check on the deployed EC2 instance
