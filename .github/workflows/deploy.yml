@@ -98,17 +98,3 @@ jobs:
             echo "❌ App is not responding on port 80."
             exit 1
           fi
-
-      # Step 7: Validate log upload to S3
-      - name: Validate S3 Log Upload
-        run: |
-          STAGE="${{ steps.set_stage.outputs.stage }}"
-          BUCKET_NAME="your-bucket-name"  # 🔁 Replace with your actual S3 bucket name
-          
-          echo "--- Checking cloud-init logs..."
-          aws s3 ls s3://$BUCKET/logs/$STAGE/ | grep cloud-init-output || echo "⚠️ Cloud-init log not found yet."
-
-          echo "--- Checking app logs..."
-          aws s3 ls s3://$BUCKET/logs/$STAGE/ | grep app || echo "⚠️ App log not found yet."
-
-          echo "✅ Log file check completed."
