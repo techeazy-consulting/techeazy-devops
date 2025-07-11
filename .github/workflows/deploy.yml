@@ -88,8 +88,8 @@ jobs:
           echo "✅ EC2 Public IP: $EC2_PUBLIC_IP"
           echo "ip=$EC2_PUBLIC_IP" >> $GITHUB_OUTPUT
 
-          echo "--- Waiting 3 minutes for the app to initialize..."
-          sleep 180
+          echo "--- Waiting 4 minutes for the app to initialize..."
+          sleep 240
 
           echo "--- Performing health check at http://$EC2_PUBLIC_IP:80"
           if curl -f http://$EC2_PUBLIC_IP:80; then
