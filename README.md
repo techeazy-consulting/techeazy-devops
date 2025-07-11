@@ -115,7 +115,7 @@ Via GitHub:
 
 To tear down:
 
-  - Go to Actions > Destroy Infrastructure EC2
+  - Go to Actions > Destroy EC2 Infrastructure
 
   - Run workflow and select the stage
 
