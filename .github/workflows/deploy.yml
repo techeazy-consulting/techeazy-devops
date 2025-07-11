@@ -1,6 +1,10 @@
 name: Deploy to EC2
 
 on:
+  push:
+    tags:
+      - 'deploy-*'   # deploy-dev, deploy-qa, deploy-prod
+
   workflow_dispatch:
     inputs:
       stage:
@@ -17,15 +21,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Validate user input
-      - name: Validate input
+      # Step 1: Determine the deployment stage (from tag or manual input)
+      - name: Set Deployment Stage
+        id: set_stage
         run: |
-          STAGE="${{ github.event.inputs.stage }}"
-          if [[ "$STAGE" != "dev" && "$STAGE" != "qa" && "$STAGE" != "prod" ]]; then
-            echo "❌ Invalid stage: $STAGE. Please choose from dev, qa, or prod."
+          if [[ "${GITHUB_REF}" == refs/tags/deploy-* ]]; then
+            STAGE="${GITHUB_REF#refs/tags/deploy-}"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            STAGE="${{ github.event.inputs.stage }}"
+          else
+            echo "❌ Could not determine deployment stage."
             exit 1
           fi
-          echo "✅ Valid stage: $STAGE"
+          echo "✅ Stage set to: $STAGE"
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
 
       # Step 2: Checkout the code from GitHub
       - name: Checkout code
@@ -59,10 +68,11 @@ jobs:
             -var="stage=${{ github.event.inputs.stage }}" \
             -var="github_token=${{ secrets.GH_TOKEN }}"
 
-      # Step 6: Health check after EC2 deployment
-      - name: Validate app health
+      # Step 6: Perform health check on the deployed EC2 instance
+      - name: Validate App Health
+        id: health_check
         run: |
-          STAGE="${{ github.event.inputs.stage }}"
+          STAGE="${{ steps.set_stage.outputs.stage }}"
 
           echo "--- Fetching EC2 Public IP for stage: $STAGE"
           EC2_PUBLIC_IP=$(aws ec2 describe-instances \
@@ -76,7 +86,9 @@ jobs:
           fi
 
           echo "✅ EC2 Public IP: $EC2_PUBLIC_IP"
-          echo "--- Waiting 3 minutes for the app to start..."
+          echo "ip=$EC2_PUBLIC_IP" >> $GITHUB_OUTPUT
+
+          echo "--- Waiting 3 minutes for the app to initialize..."
           sleep 180
 
           echo "--- Performing health check at http://$EC2_PUBLIC_IP:80"
@@ -85,4 +97,22 @@ jobs:
           else
             echo "❌ App is not responding on port 80."
             exit 1
+          fi
+
+      # Step 7: Validate log upload to S3
+      - name: Validate S3 Log Upload
+        run: |
+          STAGE="${{ steps.set_stage.outputs.stage }}"
+          BUCKET_NAME="your-bucket-name"  # 🔁 Replace with your actual S3 bucket name
+          LOG_PATH="logs/$STAGE/setup.log"
+
+          echo "--- Checking if log file exists in S3: s3://$BUCKET_NAME/$LOG_PATH"
+          FILE_EXISTS=$(aws s3 ls s3://$BUCKET_NAME/$LOG_PATH)
+
+          if [[ -z "$FILE_EXISTS" ]]; then
+            echo "❌ Log file not found in S3."
+            exit 1
+          else
+            echo "✅ Log file found in S3:"
+            echo "$FILE_EXISTS"
           fi
