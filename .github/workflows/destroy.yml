@@ -1,12 +1,12 @@
-name: Destroy Infrastructure via Terraform
+name: Destroy EC2 Infrastructure
 
 on:
   workflow_dispatch:
     inputs:
       stage:
-        description: 'Environment to destroy (dev, qa, prod)'
+        description: 'Stage to destroy (dev, qa, prod)'
         required: true
-        default: dev
+        default: 'dev'
         options:
           - dev
           - qa
@@ -17,9 +17,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      # Step 1: Validate input stage
+      - name: Validate input
+        run: |
+          STAGE="${{ github.event.inputs.stage }}"
+          if [[ "$STAGE" != "dev" && "$STAGE" != "qa" && "$STAGE" != "prod" ]]; then
+            echo "❌ Invalid stage: $STAGE. Use dev, qa, or prod."
+            exit 1
+          fi
+          echo "✅ Valid stage: $STAGE"
+
+      # Step 2: Checkout code from the repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
+      # Step 3: Configure AWS credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -27,19 +39,27 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # Step 4: Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: '1.6.0'
 
-      - name: Terraform Init and Destroy
+      # Step 5: Run Terraform destroy
+      - name: Destroy infrastructure with Terraform
         env:
           TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+        working-directory: ./terraform
         run: |
-          cd terraform
+          STAGE="${{ github.event.inputs.stage }}"
+          echo "--- Destroying resources for stage: $STAGE"
+
           terraform init
           terraform validate
+
           terraform destroy -auto-approve \
-            -var-file="${{ github.event.inputs.stage }}.json" \
-            -var="stage=${{ github.event.inputs.stage }}" \
+            -var-file="$STAGE.json" \
+            -var="stage=$STAGE" \
             -var="github_token=${{ secrets.GH_TOKEN }}"
+
+          echo "✅ Terraform destroy complete for $STAGE environment."
