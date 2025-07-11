@@ -1,5 +1,5 @@
 # 🚀 DevOps Internship Project – AWS EC2, S3, Terraform & GitHub Actions
-This project showcases how to provision, configure, and deploy EC2 instances using Terraform and GitHub Actions. It also includes S3 bucket management, IAM roles, and CI/CD deployment with environment-specific staging.
+This project demonstrates how to provision, configure, and deploy EC2 instances using Terraform and GitHub Actions. It includes S3 bucket management, IAM roles, and a CI/CD pipeline with multi-environment support (dev, qa, prod).
 
 
 ## ✅ Assignments Covered
@@ -69,21 +69,21 @@ This project showcases how to provision, configure, and deploy EC2 instances usi
 
 Via GitHub:
 
- - Go to Actions > Deploy to EC2 via Terraform
+ - Go to Actions > Deploy to EC2
 
  - Click Run workflow
 
  - Select environment: dev / qa / prod
 
- - Or push a tag like: deploy-dev, deploy-prod
+ - Or push a tag like: deploy-dev, deploy-prod, deploy-qa
 
 **2️⃣ GitHub Actions Flow (deploy.yml)**
 
  - Sets environment stage based on input or tag
 
- - Initializes Terraform
+ - Initializes and validates Terraform
 
- - Applies configuration using stage.json and user_data script
+ - Applies configuration using stage.json
 
  - Waits for EC2 to be ready
 
@@ -115,7 +115,7 @@ Via GitHub:
 
 To tear down:
 
-  - Go to Actions > Destroy Infrastructure via Terraform
+  - Go to Actions > Destroy Infrastructure EC2
 
   - Run workflow and select the stage
 
@@ -133,6 +133,8 @@ To tear down:
     
     1. Each stage uses its own .json config and shell script.
 
-    2. Backend state is stored in a pre-created S3 bucket.
+    2. Terraform backend is stored in S3.
 
     3. IAM role policies ensure only that instance can access its environment's logs.
+
+📝 Project by Abhinaya Muthukumar – DevOps Internship
