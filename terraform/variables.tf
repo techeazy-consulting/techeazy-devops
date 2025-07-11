@@ -31,13 +31,13 @@ variable "key_name_value" {
 variable "repo_url_value" {
     description = "the github url of repository to clone"
     type        = string
-    default     = "https://github.com/techeazy-consulting/techeazy-devops.git"
+    default     = "https://github.com/abhinayakumar130/tech_eazy_devops_abhinayakumar130.git"
 }
 
 variable "repo_dir_name" {
     description = "the directory name of the repository to clone"
     type        = string
-    default     = "techeazy-devops"
+    default     = "tech_eazy_devops_abhinayakumar130"
 }
 
 variable "stage" {
@@ -46,16 +46,16 @@ variable "stage" {
     default     = "dev"  
 }
 
-variable "stop_after_minutes" {
-    description = "The number of minutes after which the instance should stop."
-    type        = number
-    default     = 5
-}
-
 variable "s3_bucket_name" {
   description = "Default AWS region for CLI configuration"
   type        = string
   default     = "bucket-4254" # Replace with your desired bucket name
+}
+
+variable "stop_after_minutes" {
+    description = "The number of minutes after which the instance should stop."
+    type        = number
+    default     = 5
 }
 
 variable "github_token" {
@@ -67,5 +67,11 @@ variable "github_token" {
 variable "git_repo_path" {
   description = "Path to the Git repository"
   type        = string
-  default     = "https://github.com/techeazy-consulting/techeazy-devops.git" # Replace with your actual Git repository path
-} 
+  default     = "https://github.com/abhinayakumar130/tech_eazy_devops_abhinayakumar130.git" # Replace with your actual Git repository path
+}
+
+variable "enable_readonly_ec2" {
+  type    = bool
+  default = false
+}
+
