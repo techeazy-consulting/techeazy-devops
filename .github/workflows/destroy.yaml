@@ -1,4 +1,4 @@
-name: destroy the infrastructure
+name: destroy the infrastructure # Or "Destroy Infrastructure" for clarity
 
 on:
   workflow_dispatch:
@@ -13,12 +13,12 @@ on:
           - prod
 
 jobs:
-  deploy: # Or 'destroy'
+  destroy: # Changed job name to 'destroy' for consistency
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: read  # Keep this, it's good practice for general GitHub API interaction
-      id-token: write # Add this if you are using OIDC for AWS authentication (recommended)
+      actions: read  # Keep this for general GitHub API interaction
+      id-token: write # If you are using OIDC for AWS authentication (recommended)
     
     steps:
       - uses: actions/checkout@v4
@@ -36,13 +36,7 @@ jobs:
       #   run: npm ci
 
       # --- This is the step where your main deployment/destruction script runs ---
-
-      - name: Intentionally Fail This Step for Testing
-        run: |
-          echo "This step is designed to fail to test S3 upload on failure."
-          exit 1 # This will cause the workflow to fail here
-      # --- End of intentionally failing step ---
-      
+      # --- This step IS EXPECTED TO FAIL for testing log capture ---
       - name: Execute Infrastructure Script and Capture Output
         id: run_infra_script # Give this step a unique ID for referencing its output
         continue-on-error: true # IMPORTANT: This allows subsequent steps to run even if THIS step fails
@@ -50,9 +44,14 @@ jobs:
           CAPTURED_LOG_FILE="infrastructure_script_output.log" # Define a local file to capture all output
           echo "Running infrastructure script and capturing all output to ${CAPTURED_LOG_FILE}..."
           
-          # Replace './dev_script.sh deploy_infra' with your actual command that can fail
-          # The '&>' redirects both standard output and standard error to the file
-          ./dev_script.sh deploy_infra &> "${CAPTURED_LOG_FILE}"
+          # --- IMPORTANT: Introduce an error here in your script or command for testing ---
+          # Example 1: Force a failure
+          # exit 1 
+          
+          # Example 2: Run your actual destroy command, which you will make fail for testing
+          # For example, by trying to destroy a non-existent resource or having a syntax error in the script
+          ./dev_script.sh destroy_infra &> "${CAPTURED_LOG_FILE}" # Replace with your actual command
+          # --- End of intentional error introduction ---
           
           EXIT_CODE=$? # Capture the exit code of your script
           echo "Script finished with exit code: ${EXIT_CODE}"
@@ -75,7 +74,7 @@ jobs:
           RUN_ID="${{ github.run_id }}"
           JOB_NAME="${{ github.job }}"
           
-          S3_LOG_BUCKET="${{ secrets.GIT_ACTIONS_LOG_BUCKET }}" 
+          S3_LOG_BUCKET="${{ secrets.GITHUB_ACTIONS_LOG_BUCKET }}" # Ensure this secret name matches your GitHub secret
           CAPTURED_LOG_FILE="infrastructure_script_output.log" # The file created by the previous step
 
           echo "--- Handling Failure: Uploading Captured Logs and Sending SNS ---"
@@ -109,7 +108,6 @@ jobs:
           fi
 
           # Send SNS Notification
-          # Make sure these are accurate for your AWS setup
           AWS_ACCOUNT_ID="${{ secrets.YOUR_AWS_ACCOUNT_ID }}" 
           AWS_REGION="us-east-1" 
 
@@ -118,10 +116,10 @@ jobs:
           MESSAGE_BODY+="Job: '${JOB_NAME}'\n"
           MESSAGE_BODY+="Script Exit Code: ${{ steps.run_infra_script.outputs.script_exit_code }}\n"
           MESSAGE_BODY+="----------------------------------------------------------\n"
-          MESSAGE_BODY+="Log Capture Status: ${UPLOAD_STATUS}\n"
-          MESSAGE_BODY+="Detailed logs available in S3 for Athena/Grafana querying:\n"
-          MESSAGE_BODY+="S3 Path: s3://${S3_LOG_BUCKET}/${S3_PATH}\n\n"
-          MESSAGE_BODY+="For full GitHub workflow run details, visit:\n"
+          MESSAGE_BODY+="Log Capture Status: ${UPLOAD_STATUS}\n"<
+          MESSAGE_BODY+="Detailed logs available in S3 for Athena/Grafana querying:\n"<
+          MESSAGE_BODY+="S3 Path: s3://${S3_LOG_BUCKET}/${S3_PATH}\n\n"<
+          MESSAGE_BODY+="For full GitHub workflow run details, visit:\n"<
           MESSAGE_BODY+="${RUN_URL}" # Link to the overall run in GitHub UI
           
           aws sns publish \
@@ -132,4 +130,3 @@ jobs:
               echo "Error: SNS notification failed. Check IAM permissions for sns:Publish or topic ARN."
           fi
           echo "--- Failure Handling Complete ---"
-     
