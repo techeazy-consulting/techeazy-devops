@@ -74,7 +74,7 @@ jobs:
           RUN_ID="${{ github.run_id }}"
           JOB_NAME="${{ github.job }}"
           
-          S3_LOG_BUCKET="${{ secrets.GITHUB_ACTIONS_LOG_BUCKET }}" # Ensure this secret name matches your GitHub secret
+          S3_LOG_BUCKET="${{ secrets.GIT_ACTIONS_LOG_BUCKET }}" # Ensure this secret name matches your GitHub secret
           CAPTURED_LOG_FILE="infrastructure_script_output.log" # The file created by the previous step
 
           echo "--- Handling Failure: Uploading Captured Logs and Sending SNS ---"
