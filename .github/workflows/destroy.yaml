@@ -35,25 +35,6 @@ jobs:
       # - name: Install Dependencies
       #   run: npm ci
 
-      - name: Execute Infrastructure Script and Capture Output
-        id: run_infra_script2
-        continue-on-error: true
-        run: |
-          CAPTURED_LOG_FILE="infrastructure_script_output.log"
-          echo "Running infrastructure script and capturing all output to ${CAPTURED_LOG_FILE}..."
-          
-          # Replace './dev_script.sh deploy_infra' with your actual command that can fail
-          # The '&>' redirects both standard output and standard error to the file
-          ./dev_script.sh deploy_infra &> "${CAPTURED_LOG_FILE}"
-          
-          EXIT_CODE=$?
-          echo "Script finished with exit code: ${EXIT_CODE}"
-          
-          echo "script_exit_code=${EXIT_CODE}" >> $GITHUB_OUTPUT
-          
-          echo "--- Script Output (Snippet) ---"
-          head -n 20 "${CAPTURED_LOG_FILE}" || true
-          echo "-------------------------------"
 
       # --- This is the step where your main deployment/destruction script runs ---
       # --- This step IS EXPECTED TO FAIL for testing log capture ---
@@ -83,6 +64,11 @@ jobs:
           echo "--- Script Output (Snippet) ---"
           head -n 20 "${CAPTURED_LOG_FILE}" || true # Print first 20 lines, || true to prevent error if file empty
           echo "-------------------------------"
+
+          # --- INTENTIONALLY FAIL THIS STEP FOR TESTING ---
+          echo "Forcing script to fail for testing purposes."
+          exit 1 # This will cause the step to exit with a non-zero code, simulating a failure
+          # --- END INTENTIONAL FAILURE ---
 
       # --- This step handles the log upload and SNS notification only if the script failed ---
       - name: Upload Captured Logs to S3 and Send SNS Notification on Failure
