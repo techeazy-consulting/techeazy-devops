@@ -13,126 +13,35 @@ on:
           - prod
 
 jobs:
-  destroy: # Changed job name to 'destroy' for consistency
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read  # Keep this for general GitHub API interaction
-      id-token: write # If you are using OIDC for AWS authentication (recommended)
-    
     steps:
-      - uses: actions/checkout@v4
+      - name: Do something risky
+        run: exit 1  # Force failure for demo
 
-      - name: Configure AWS Credentials
+  upload_logs_on_failure:
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ failure() }}  # Run ONLY if previous job fails
+    steps:
+      - name: Download workflow logs
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const logs = await github.rest.actions.downloadWorkflowRunLogs({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+            return logs.data;
+
+      - name: Upload to S3
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # Make sure this matches your AWS region
+          aws-region: us-east-1
 
-      # --- Your other setup steps (e.g., install dependencies, build) would go here ---
-      # Example:
-      # - name: Install Dependencies
-      #   run: npm ci
-
-
-      # --- This is the step where your main deployment/destruction script runs ---
-      # --- This step IS EXPECTED TO FAIL for testing log capture ---
-      - name: Execute Infrastructure Script and Capture Output
-        id: run_infra_script # Give this step a unique ID for referencing its output
-       # continue-on-error: true # IMPORTANT: This allows subsequent steps to run even if THIS step fails
-        run: |
-          CAPTURED_LOG_FILE="infrastructure_script_output.log" # Define a local file to capture all output
-          echo "Running infrastructure script and capturing all output to ${CAPTURED_LOG_FILE}..."
-          
-          # --- IMPORTANT: Introduce an error here in your script or command for testing ---
-          # Example 1: Force a failure
-          # exit 1 
-          
-          # Example 2: Run your actual destroy command, which you will make fail for testing
-          # For example, by trying to destroy a non-existent resource or having a syntax error in the script
-          ./dev_script.sh destroy_infra &> "${CAPTURED_LOG_FILE}" # Replace with your actual command
-          # --- End of intentional error introduction ---
-          
-          EXIT_CODE=$? # Capture the exit code of your script
-          echo "Script finished with exit code: ${EXIT_CODE}"
-          
-          # Make the script's exit code available to subsequent steps
-          echo "script_exit_code=${EXIT_CODE}" >> $GITHUB_OUTPUT 
-          
-          # You might also want to print a snippet to the console for quick review
-          echo "--- Script Output (Snippet) ---"
-          head -n 20 "${CAPTURED_LOG_FILE}" || true # Print first 20 lines, || true to prevent error if file empty
-          echo "-------------------------------"
-
-          # --- INTENTIONALLY FAIL THIS STEP FOR TESTING ---
-          echo "Forcing script to fail for testing purposes."
-          exit 1 # This will cause the step to exit with a non-zero code, simulating a failure
-          # --- END INTENTIONAL FAILURE ---
-
-      # --- This step handles the log upload and SNS notification only if the script failed ---
-      - name: Upload Captured Logs to S3 and Send SNS Notification on Failure
-        # This step runs ONLY if the 'run_infra_script' step returned a non-zero exit code
-        if: steps.run_infra_script.outputs.script_exit_code != '0'
-        run: |
-          STAGE="${{ github.event.inputs.stage }}"
-          WORKFLOW_NAME="${{ github.workflow }}"
-          RUN_ID="${{ github.run_id }}"
-          JOB_NAME="${{ github.job }}"
-          
-          S3_LOG_BUCKET="${{ secrets.GIT_ACTIONS_LOG_BUCKET }}" # Ensure this secret name matches your GitHub secret
-          CAPTURED_LOG_FILE="infrastructure_script_output.log" # The file created by the previous step
-
-          echo "--- Handling Failure: Uploading Captured Logs and Sending SNS ---"
-
-          # Check if the captured log file exists and has content
-          if [ -s "${CAPTURED_LOG_FILE}" ]; then # -s checks if file exists and is not empty
-              echo "Captured log file found: ${CAPTURED_LOG_FILE}"
-              # Create a unique name for the log file in S3, incorporating relevant details
-              LOG_FILE_NAME="${WORKFLOW_NAME}_${STAGE}_${JOB_NAME}_${RUN_ID}_$(date +%Y%m%d%H%M%S)_failure.log"
-              
-              # Define the S3 path with year/month/day partitioning
-              S3_PATH="workflow_logs/year=$(date +%Y)/month=$(date +%m)/day=$(date +%d)/${LOG_FILE_NAME}"
-              
-              echo "Uploading captured log file to s3://${S3_LOG_BUCKET}/${S3_PATH}"
-              aws s3 cp "${CAPTURED_LOG_FILE}" "s3://${S3_LOG_BUCKET}/${S3_PATH}"
-              if [ $? -ne 0 ]; then
-                  echo "Error: S3 upload of captured log failed. Check IAM permissions for s3:PutObject or bucket name."
-                  UPLOAD_STATUS="Failed"
-              else
-                  echo "Logs uploaded to S3 successfully."
-                  UPLOAD_STATUS="Success"
-              fi
-          else
-              echo "Warning: No captured log file (${CAPTURED_LOG_FILE}) found or it's empty."
-              # Create a placeholder log file if the main log wasn't captured
-              LOG_FILE_NAME="${WORKFLOW_NAME}_${STAGE}_${JOB_NAME}_${RUN_ID}_$(date +%Y%m%d%H%M%S)_no_log_captured.log"
-              S3_PATH="workflow_logs/year=$(date +%Y)/month=$(date +%m)/day=$(date +%d)/${LOG_FILE_NAME}"
-              echo "No specific script output captured. This might indicate an early failure or misconfiguration." > "${LOG_FILE_NAME}"
-              aws s3 cp "${LOG_FILE_NAME}" "s3://${S3_LOG_BUCKET}/${S3_PATH}"
-              UPLOAD_STATUS="Placeholder_Uploaded"
-          fi
-
-          # Send SNS Notification
-          AWS_ACCOUNT_ID="${{ secrets.YOUR_AWS_ACCOUNT_ID }}" 
-          AWS_REGION="us-east-1" 
-
-          MESSAGE_SUBJECT="GitHub Actions Workflow FAILED: ${WORKFLOW_NAME} - Stage: ${STAGE}"
-          MESSAGE_BODY="Workflow '${WORKFLOW_NAME}' for stage '${STAGE}' failed.\n"
-          MESSAGE_BODY+="Job: '${JOB_NAME}'\n"
-          MESSAGE_BODY+="Script Exit Code: ${{ steps.run_infra_script.outputs.script_exit_code }}\n"
-          MESSAGE_BODY+="----------------------------------------------------------\n"
-          MESSAGE_BODY+="Log Capture Status: ${UPLOAD_STATUS}\n"<
-          MESSAGE_BODY+="Detailed logs available in S3 for Athena/Grafana querying:\n"<
-          MESSAGE_BODY+="S3 Path: s3://${S3_LOG_BUCKET}/${S3_PATH}\n\n"<
-          MESSAGE_BODY+="For full GitHub workflow run details, visit:\n"<
-          MESSAGE_BODY+="${RUN_URL}" # Link to the overall run in GitHub UI
-          
-          aws sns publish \
-            --topic-arn "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:app-alerts-topic-${STAGE}" \
-            --subject "${MESSAGE_SUBJECT}" \
-            --message "${MESSAGE_BODY}"
-          if [ $? -ne 0 ]; then
-              echo "Error: SNS notification failed. Check IAM permissions for sns:Publish or topic ARN."
-          fi
-          echo "--- Failure Handling Complete ---"
+      - run: |
+          echo "${{ steps.download_logs.outputs.result }}" > logs.zip
+          aws s3 cp logs.zip s3://your-bucket/failed-logs/${{ github.run_id }}.zip
