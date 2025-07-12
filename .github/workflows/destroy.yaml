@@ -1,6 +1,6 @@
 # .github/workflows/destroy.yml
 # This is your "Main Worker" workflow
-name: Destroy Infrastructure
+name: Destroy Infrastructure 6
 
 on:
   workflow_dispatch:
