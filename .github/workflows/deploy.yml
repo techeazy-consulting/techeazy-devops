@@ -15,6 +15,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read  # <-- ENSURE THIS IS PRESENT
     steps:
       - name: Validate input
         run: |
