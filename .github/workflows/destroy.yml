@@ -20,6 +20,13 @@ jobs:
       contents: read
       actions: read  # <-- ENSURE THIS IS PRESENT
     steps:
+      - name: Validate input
+        run: |
+          if [[ "${{ github.event.inputs.stage }}" != "dev" && "${{ github.event.inputs.stage }}" != "qa" && "${{ github.event.inputs.stage }}" != "prod" ]]; then
+            echo "Invalid input: ${{ github.event.inputs.stage }}. Please use one of the following: dev, qa, prod."
+            exit 1
+          fi
+          
       - name: Checkout code
         uses: actions/checkout@v2
   
@@ -51,50 +58,85 @@ jobs:
           terraform destroy -var-file="$VAR_FILE" --auto-approve \
             -var "stage=${{ github.event.inputs.stage }}"
         working-directory: ./terraform
-        
-      - name: Fetch and Upload Workflow Logs to S3 on Failure
+
+      - name: Fetch and Upload Workflow Logs to S3 on Failure (Debug)
         if: failure() # This step runs ONLY if any previous step in this job fails
         run: |
           STAGE="${{ github.event.inputs.stage }}"
           WORKFLOW_NAME="${{ github.workflow }}"
           RUN_ID="${{ github.run_id }}"
           JOB_NAME="${{ github.job }}"
-
-          # Get the S3 bucket name from GitHub Secret
+          
+          # Ensure this secret is correctly configured in your GitHub repo settings
           S3_LOG_BUCKET="${{ secrets.GIT_ACTIONS_LOG_BUCKET }}" 
-
-          # 1. Fetch the entire workflow log bundle using GitHub API
-          echo "Fetching logs for run ID: ${RUN_ID}"
+          
+          echo "--- Starting Log Fetch & Upload Debug ---"
+          echo "Attempting to fetch logs for Workflow: ${WORKFLOW_NAME}, Run ID: ${RUN_ID}, Job: ${JOB_NAME}"
+          
+          # Construct the GitHub API URL for fetching logs
           WORKFLOW_LOG_ZIP_URL="https://api.github.com/repos/${{ github.repository }}/actions/runs/${RUN_ID}/logs"
+          echo "GitHub API Log URL: ${WORKFLOW_LOG_ZIP_URL}"
 
-          # Download the zip file containing all job logs for this run
-          # -s for silent, -H for header (auth token), -L for redirects, -o for output file
-          curl -s -H "Authorization: token ${{ secrets.GH_TOKEN }}" -L "${WORKFLOW_LOG_ZIP_URL}" -o workflow_logs.zip
+          # Use curl with -v for verbose output, --fail-with-body to output body on HTTP errors,
+          # and --write-out to capture the HTTP status code
+          # Redirect stderr (verbose output) to a file for review
+          CURL_OUTPUT_FILE="curl_debug.log"
+          HTTP_STATUS=$(curl -s -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" -L "${WORKFLOW_LOG_ZIP_URL}" -o workflow_logs.zip --write-out "%{http_code}" 2> "${CURL_OUTPUT_FILE}")
+          
+          echo "HTTP Status Code from log download: ${HTTP_STATUS}"
+          echo "--- Curl Debug Output (from ${CURL_OUTPUT_FILE}) ---"
+          cat "${CURL_OUTPUT_FILE}"
+          echo "-------------------------------------"
 
-          # Unzip logs into a directory
+          # Check if the download was successful (HTTP 200)
+          if [ "${HTTP_STATUS}" -ne "200" ]; then
+              echo "Error: Failed to download workflow logs. HTTP Status: ${HTTP_STATUS}"
+              echo "Content of workflow_logs.zip (if any, might be an error page from GitHub):"
+              cat workflow_logs.zip || echo "workflow_logs.zip is empty or unreadable."
+              exit 1 # Fail the step explicitly with a clearer message
+          fi
+
+          # Verify if the downloaded file is a valid zip before attempting to unzip
+          if ! file workflow_logs.zip | grep -q "Zip archive data"; then
+              echo "Error: Downloaded file 'workflow_logs.zip' is NOT a valid ZIP archive."
+              echo "This usually means GitHub API returned an error page or non-zip content."
+              echo "Content of workflow_logs.zip:"
+              cat workflow_logs.zip || echo "workflow_logs.zip is empty or unreadable."
+              exit 1 # Fail the step explicitly
+          fi
+          echo "Verification: workflow_logs.zip is a valid ZIP archive. Proceeding with unzip."
+
+          # Unzip logs into a directory, and explicitly check its success
           unzip -qq workflow_logs.zip -d workflow_logs
+          if [ $? -ne 0 ]; then
+              echo "Error: 'unzip' command failed. This should not happen if the file was a valid zip."
+              exit 1
+          fi
+          echo "Successfully unzipped logs."
 
           # Combine all individual job logs into one file for easier upload/parsing
-          # Name it uniquely for S3: WorkflowName_Stage_JobName_RunID_Timestamp.log
           LOG_FILE_NAME="${WORKFLOW_NAME}_${STAGE}_${JOB_NAME}_${RUN_ID}_$(date +%Y%m%d%H%M%S).log"
           FULL_LOG_PATH="./workflow_logs/${LOG_FILE_NAME}"
-
-          # Ensure a file is created even if unzip or cat fails, so there's always something to upload
-          find workflow_logs -type f -name "*.txt" -exec cat {} + > "${FULL_LOG_PATH}" 2>/dev/null || echo "No detailed logs found or error during log extraction." > "${FULL_LOG_PATH}"
-
+          
+          # Find all .txt files in the unzipped directory and concatenate them
+          # If no .txt files are found, create an empty file or a file with a message
+          find workflow_logs -type f -name "*.txt" -exec cat {} + > "${FULL_LOG_PATH}" 2>/dev/null || echo "No detailed .txt logs found within the zip archive, or extraction error." > "${FULL_LOG_PATH}"
+          echo "Combined logs into: ${FULL_LOG_PATH}"
+          
           # 2. Upload the combined log file to S3
-          # S3 path structure for partitioning (year/month/day)
           S3_PATH="workflow_logs/year=$(date +%Y)/month=$(date +%m)/day=$(date +%d)/${LOG_FILE_NAME}"
 
           echo "Uploading logs to s3://${S3_LOG_BUCKET}/${S3_PATH}"
           aws s3 cp "${FULL_LOG_PATH}" "s3://${S3_LOG_BUCKET}/${S3_PATH}"
+          if [ $? -ne 0 ]; then
+              echo "Error: S3 upload failed."
+              exit 1
+          fi
           echo "Logs uploaded to S3."
 
-          # 3. Send SNS Notification (update message to reference S3/Athena)
-          # Ensure your AWS_ACCOUNT_ID and AWS_REGION are correct here.
-          # You can define them as GitHub Actions vars or secrets if preferred.
-          AWS_ACCOUNT_ID="<YOUR_AWS_ACCOUNT_ID>" # e.g., ${{ secrets.AWS_ACCOUNT_ID }}
-          AWS_REGION="us-east-1" # e.g., ${{ vars.aws_region }}
+          # 3. Send SNS Notification (as before, but update message to reference S3/Athena)
+          AWS_ACCOUNT_ID="${{ secrets.YOUR_AWS_ACCOUNT_ID }}" # Replace or use secret  
+          AWS_REGION="us-east-1" # As defined in your configure-aws-credentials step
 
           MESSAGE_SUBJECT="GitHub Actions Workflow FAILED: ${WORKFLOW_NAME} - Stage: ${STAGE}"
           MESSAGE_BODY="Workflow '${WORKFLOW_NAME}' for stage '${STAGE}' failed.\n"
@@ -110,3 +152,11 @@ jobs:
             --topic-arn "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:app-alerts-topic-${STAGE}" \
             --subject "${MESSAGE_SUBJECT}" \
             --message "${MESSAGE_BODY}"
+          if [ $? -ne 0 ]; then
+              echo "Error: SNS notification failed."
+              # Do not exit here if SNS is not critical to stop the whole process,
+              # as logs were already uploaded.
+          fi
+          echo "--- Log Fetch & Upload Debug Complete ---"
+        
+     
