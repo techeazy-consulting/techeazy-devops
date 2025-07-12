@@ -1,0 +1,89 @@
+name: destroy the infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Deployment stage'
+        required: true
+        default: 'dev'
+        options:
+          - dev
+          - qa
+          - prod
+
+jobs:
+  destroy: # Or your 'deploy' job
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # actions: read # You might not strictly need this for *just* uploading a dummy file, but good to keep if you plan to re-enable log fetching later.
+      # Add your AWS permissions here (from the IAM policy for S3 upload)
+      id-token: write # If you're using OIDC for AWS authentication
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # Or your specified region
+      
+      # --- Your intentionally failing step goes here ---
+      - name: Intentionally Fail This Step for Testing
+        run: |
+          echo "This step is designed to fail to test S3 upload on failure."
+          exit 1 # This will cause the workflow to fail here
+      # --- End of intentionally failing step ---
+
+      - name: Upload Dummy File to S3 and Send SNS Notification on Failure
+        if: failure() # This step runs ONLY if any previous step in this job fails
+        run: |
+          STAGE="${{ github.event.inputs.stage }}"
+          WORKFLOW_NAME="${{ github.workflow }}"
+          RUN_ID="${{ github.run_id }}"
+          JOB_NAME="${{ github.job }}"
+          
+          S3_LOG_BUCKET="${{ secrets.GIT_ACTIONS_LOG_BUCKET }}" 
+          
+          # --- Create a simple dummy file ---
+          DUMMY_FILE_NAME="dummy_failure_log_${WORKFLOW_NAME}_${STAGE}_${JOB_NAME}_${RUN_ID}_$(date +%Y%m%d%H%M%S).txt"
+          echo "Workflow '${WORKFLOW_NAME}' (Run ID: ${RUN_ID}) for stage '${STAGE}' failed at job '${JOB_NAME}'." > "${DUMMY_FILE_NAME}"
+          echo "This is a dummy log file to confirm S3 upload on failure is working." >> "${DUMMY_FILE_NAME}"
+          echo "Current timestamp: $(date)" >> "${DUMMY_FILE_NAME}"
+          # --- End of dummy file creation ---
+          
+          S3_PATH="workflow_logs/year=$(date +%Y)/month=$(date +%m)/day=$(date +%d)/${DUMMY_FILE_NAME}"
+
+          echo "Uploading dummy file to s3://${S3_LOG_BUCKET}/${S3_PATH}"
+          aws s3 cp "${DUMMY_FILE_NAME}" "s3://${S3_LOG_BUCKET}/${S3_PATH}"
+          if [ $? -ne 0 ]; then
+              echo "Error: S3 upload of dummy file failed."
+              UPLOAD_STATUS="Failed"
+          else
+              echo "Dummy file uploaded to S3."
+              UPLOAD_STATUS="Success"
+          fi
+
+          # Send SNS Notification (update message to reference the dummy file)
+          AWS_ACCOUNT_ID="${{ secrets.YOUR_AWS_ACCOUNT_ID }}" 
+          AWS_REGION="us-east-1" 
+
+          MESSAGE_SUBJECT="GitHub Actions Workflow FAILED (Dummy Test): ${WORKFLOW_NAME} - Stage: ${STAGE}"
+          MESSAGE_BODY="Workflow '${WORKFLOW_NAME}' for stage '${STAGE}' failed.\n"
+          MESSAGE_BODY+="Job: '${JOB_NAME}'\n"
+          MESSAGE_BODY+="----------------------------------------------------------\n"
+          MESSAGE_BODY+="Log Capture Status (Dummy File): ${UPLOAD_STATUS}\n"
+          MESSAGE_BODY+="Dummy log file available in S3:\n"
+          MESSAGE_BODY+="S3 Path: s3://${S3_LOG_BUCKET}/${S3_PATH}\n\n"
+          MESSAGE_BODY+="Full workflow run: ${RUN_URL}"
+
+          aws sns publish \
+            --topic-arn "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:app-alerts-topic-${STAGE}" \
+            --subject "${MESSAGE_SUBJECT}" \
+            --message "${MESSAGE_BODY}"
+          if [ $? -ne 0 ]; then
+              echo "Error: SNS notification failed."
+          fi
+          echo "--- Dummy File Upload Test Complete ---"
