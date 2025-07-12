@@ -1,0 +1,107 @@
+# .github/workflows/destroy.yml
+# This is your "Main Worker" workflow
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Deployment stage'
+        required: true
+        default: 'dev'
+        options:
+          - dev
+          - qa
+          - prod
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # If using OIDC for AWS
+    
+    steps:
+      - name: Validate Input
+        run: |
+          if [[ "${{ github.event.inputs.stage }}" != "dev" && "${{ github.event.inputs.stage }}" != "qa" && "${{ github.event.inputs.stage }}" != "prod" ]]; then
+            echo "Invalid input: ${{ github.event.inputs.stage }}. Please use one of the following: dev, qa, prod."
+            exit 1
+          fi
+          
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Your AWS credentials for the main workflow (e.g., for Terraform to use)
+      - name: Configure AWS Credentials (for main job)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.2.3'
+
+      - name: Terraform Init and Workspace Management
+        run: |
+          terraform init
+          terraform workspace select ${{ github.event.inputs.stage }} || terraform workspace new ${{ github.event.inputs.stage }}
+        working-directory: ./terraform
+
+      # --- CRITICAL: THE STEP THAT RUNS YOUR MAIN COMMAND ---
+      # This step captures all output to a file and always continues even if it fails.
+      - name: Execute Terraform Destroy and Capture Output
+        id: destroy_execution # <--- IMPORTANT: Give this step a unique ID!
+        continue-on-error: true # <--- CRITICAL: Allows the workflow to proceed if this fails!
+        run: |
+          # Define the file where all output will be saved.
+          # THIS IS THE FILE THE "EMERGENCY LOGGER" WILL UPLOAD.
+          CAPTURED_LOG_FILE="terraform_destroy_execution.log" 
+          echo "Running terraform destroy and capturing all output to ${CAPTURED_LOG_FILE}..."
+          
+          VAR_FILE="config/${{ github.event.inputs.stage }}.json" 
+          
+          # Your actual terraform command: all its output (stdout & stderr) goes to the file.
+          terraform destroy \
+            -var-file="$VAR_FILE" \
+            -var "stage=${{ github.event.inputs.stage }}" \
+            -var "github_token=${{ secrets.GH_TOKEN }}" \
+            --auto-approve \
+            &> "${CAPTURED_LOG_FILE}" # <--- CRITICAL: Redirects all output to the file!
+          
+          EXIT_CODE=$? # Capture the exit code of the 'terraform destroy' command.
+          echo "Terraform destroy command finished with exit code: ${EXIT_CODE}"
+          
+          # This makes the exit code available to subsequent steps using 'outputs'.
+          echo "script_exit_code=${EXIT_CODE}" >> $GITHUB_OUTPUT 
+          
+          # Optionally print a snippet to the GitHub Actions log for quick view.
+          echo "--- Captured Script Output (Snippet) ---"
+          head -n 50 "${CAPTURED_LOG_FILE}" || true 
+          echo "----------------------------------------"
+        working-directory: ./terraform 
+
+      # --- CRITICAL: CALL THE "EMERGENCY LOGGER" ON FAILURE ---
+      # This step replaces your old S3 upload and SNS notification logic.
+      - name: Call Upload Failed Logs Workflow
+        # This step runs ONLY if the 'destroy_execution' step (your terraform command) failed.
+        if: steps.destroy_execution.outputs.script_exit_code != '0' 
+        uses: ./.github/workflows/upload_failed_logs.yml # <--- Path to your new reusable workflow!
+        with:
+          # Pass all necessary information to the "Emergency Logger"
+          captured_log_file: "terraform_destroy_execution.log" # The file created above
+          workflow_name: ${{ github.workflow }}
+          run_id: ${{ github.run_id }}
+          job_name: ${{ github.job }}
+          stage: ${{ github.event.inputs.stage }}
+          script_exit_code: ${{ steps.destroy_execution.outputs.script_exit_code }}
+          github_run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        secrets: # Pass all necessary secrets to the "Emergency Logger"
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_account_id: ${{ secrets.YOUR_AWS_ACCOUNT_ID }}
+          git_actions_log_bucket: ${{ secrets.GIT_ACTIONS_LOG_BUCKET }}
+          gh_token: ${{ secrets.GH_TOKEN }}
