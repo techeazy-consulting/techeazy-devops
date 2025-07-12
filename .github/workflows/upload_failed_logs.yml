@@ -1,0 +1,114 @@
+# .github/workflows/upload_failed_logs.yml
+# This is the "Emergency Logger" workflow. It gets called by other workflows.
+name: Upload Failed Workflow Logs to S3
+
+on:
+  workflow_call: # This makes it a reusable workflow
+    inputs:
+      captured_log_file:
+        description: 'Path to the locally captured log file from the failing step'
+        required: true
+        type: string
+      workflow_name:
+        description: 'Name of the calling workflow (github.workflow)'
+        required: true
+        type: string
+      run_id:
+        description: 'Run ID of the calling workflow (github.run_id)'
+        required: true
+        type: string
+      job_name:
+        description: 'Name of the calling job (github.job)'
+        required: true
+        type: string
+      stage:
+        description: 'Deployment stage (e.g., dev, qa, prod)'
+        required: true
+        type: string
+      script_exit_code:
+        description: 'Exit code of the failed script (0 for success, non-zero for failure)'
+        required: true
+        type: string
+      github_run_url:
+        description: 'Full URL to the calling workflow run on GitHub'
+        required: true
+        type: string
+    secrets: # These secrets are provided by the calling workflow
+      aws_access_key_id:
+        required: true
+      aws_secret_access_key:
+        required: true
+      aws_account_id:
+        required: true
+      git_actions_log_bucket: # This is your S3 bucket name secret
+        required: true
+      # gh_token: # Only needed if this reusable workflow itself needs to make GitHub API calls, currently it does not.
+      #   required: true
+
+jobs:
+  upload_logs:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # For AWS OIDC, if you use it later.
+    
+    steps:
+      - name: Configure AWS Credentials for Upload
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: us-east-1 # Make sure this is your correct AWS region for S3 and SNS
+
+      - name: Perform Log Upload and SNS Notification
+        run: |
+          CAPTURED_LOG_FILE="${{ inputs.captured_log_file }}" # Get the log file path from the caller
+          S3_LOG_BUCKET="${{ secrets.git_actions_log_bucket }}" 
+          
+          echo "--- Processing Failed Workflow Log ---"
+
+          if [ -s "${CAPTURED_LOG_FILE}" ]; then
+              echo "Captured log file found: ${CAPTURED_LOG_FILE}"
+              LOG_S3_KEY="${{ inputs.workflow_name }}_${{ inputs.stage }}_${{ inputs.job_name }}_${{ inputs.run_id }}_$(date +%Y%m%d%H%M%S)_failure.log"
+              S3_PATH="workflow_logs/year=$(date +%Y)/month=$(date +%m)/day=$(date +%d)/${LOG_S3_KEY}"
+              
+              echo "Uploading captured log file to s3://${S3_LOG_BUCKET}/${S3_PATH}"
+              aws s3 cp "${CAPTURED_LOG_FILE}" "s3://${S3_LOG_BUCKET}/${S3_PATH}"
+              if [ $? -ne 0 ]; then
+                  echo "Error: S3 upload of captured log failed."
+                  UPLOAD_STATUS="Failed"
+              else
+                  echo "Logs uploaded to S3 successfully."
+                  UPLOAD_STATUS="Success"
+              fi
+          else
+              echo "Warning: No specific script output captured, or file is empty (${CAPTURED_LOG_FILE}). Uploading placeholder."
+              LOG_S3_KEY="${{ inputs.workflow_name }}_${{ inputs.stage }}_${{ inputs.job_name }}_${{ inputs.run_id }}_$(date +%Y%m%d%H%M%S)_no_log_captured.log"
+              S3_PATH="workflow_logs/year=$(date +%Y)/month=$(date +%m)/day=$(date +%d)/${LOG_S3_KEY}"
+              echo "No specific script output was captured. This might indicate an early failure or misconfiguration." > "${LOG_S3_KEY}"
+              aws s3 cp "${LOG_S3_KEY}" "s3://${S3_LOG_BUCKET}/${S3_PATH}"
+              UPLOAD_STATUS="Placeholder_Uploaded"
+          fi
+
+          # Send SNS Notification
+          AWS_ACCOUNT_ID="${{ secrets.aws_account_id }}" 
+          AWS_REGION="us-east-1" 
+
+          MESSAGE_SUBJECT="GitHub Actions Workflow FAILED: ${{ inputs.workflow_name }} - Stage: ${{ inputs.stage }}"
+          MESSAGE_BODY="Workflow '${{ inputs.workflow_name }}' for stage '${{ inputs.stage }}' failed.\n"
+          MESSAGE_BODY+="Job: '${{ inputs.job_name }}'\n"
+          MESSAGE_BODY+="Script Exit Code: ${{ inputs.script_exit_code }}\n"
+          MESSAGE_BODY+="----------------------------------------------------------\n"
+          MESSAGE_BODY+="Log Capture Status: ${UPLOAD_STATUS}\n"
+          MESSAGE_BODY+="Detailed logs available in S3 for Athena/Grafana querying:\n"
+          MESSAGE_BODY+="S3 Path: s3://${S3_LOG_BUCKET}/${S3_PATH}\n\n"
+          MESSAGE_BODY+="For full GitHub workflow run details, visit:\n"
+          MESSAGE_BODY+="${{ inputs.github_run_url }}" 
+          
+          aws sns publish \
+            --topic-arn "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:app-alerts-topic-${{ inputs.stage }}" \
+            --subject "${MESSAGE_SUBJECT}" \
+            --message "${MESSAGE_BODY}"
+          if [ $? -ne 0 ]; then
+              echo "Error: SNS notification failed."
+          fi
+          echo "--- Log Upload and SNS Complete ---"
