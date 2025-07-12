@@ -40,7 +40,7 @@ jobs:
       # --- This step IS EXPECTED TO FAIL for testing log capture ---
       - name: Execute Infrastructure Script and Capture Output
         id: run_infra_script # Give this step a unique ID for referencing its output
-        continue-on-error: true # IMPORTANT: This allows subsequent steps to run even if THIS step fails
+       # continue-on-error: true # IMPORTANT: This allows subsequent steps to run even if THIS step fails
         run: |
           CAPTURED_LOG_FILE="infrastructure_script_output.log" # Define a local file to capture all output
           echo "Running infrastructure script and capturing all output to ${CAPTURED_LOG_FILE}..."
