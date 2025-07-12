@@ -16,6 +16,9 @@ on:
 jobs:
   destroy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read  # <-- ENSURE THIS IS PRESENT
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -48,5 +51,62 @@ jobs:
           terraform destroy -var-file="$VAR_FILE" --auto-approve \
             -var "stage=${{ github.event.inputs.stage }}"
         working-directory: ./terraform
-      
+        
+      - name: Fetch and Upload Workflow Logs to S3 on Failure
+        if: failure() # This step runs ONLY if any previous step in this job fails
+        run: |
+          STAGE="${{ github.event.inputs.stage }}"
+          WORKFLOW_NAME="${{ github.workflow }}"
+          RUN_ID="${{ github.run_id }}"
+          JOB_NAME="${{ github.job }}"
 
+          # Get the S3 bucket name from GitHub Secret
+          S3_LOG_BUCKET="${{ secrets.GITHUB_ACTIONS_LOG_BUCKET }}" 
+
+          # 1. Fetch the entire workflow log bundle using GitHub API
+          echo "Fetching logs for run ID: ${RUN_ID}"
+          WORKFLOW_LOG_ZIP_URL="https://api.github.com/repos/${{ github.repository }}/actions/runs/${RUN_ID}/logs"
+
+          # Download the zip file containing all job logs for this run
+          # -s for silent, -H for header (auth token), -L for redirects, -o for output file
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -L "${WORKFLOW_LOG_ZIP_URL}" -o workflow_logs.zip
+
+          # Unzip logs into a directory
+          unzip -qq workflow_logs.zip -d workflow_logs
+
+          # Combine all individual job logs into one file for easier upload/parsing
+          # Name it uniquely for S3: WorkflowName_Stage_JobName_RunID_Timestamp.log
+          LOG_FILE_NAME="${WORKFLOW_NAME}_${STAGE}_${JOB_NAME}_${RUN_ID}_$(date +%Y%m%d%H%M%S).log"
+          FULL_LOG_PATH="./workflow_logs/${LOG_FILE_NAME}"
+
+          # Ensure a file is created even if unzip or cat fails, so there's always something to upload
+          find workflow_logs -type f -name "*.txt" -exec cat {} + > "${FULL_LOG_PATH}" 2>/dev/null || echo "No detailed logs found or error during log extraction." > "${FULL_LOG_PATH}"
+
+          # 2. Upload the combined log file to S3
+          # S3 path structure for partitioning (year/month/day)
+          S3_PATH="workflow_logs/year=$(date +%Y)/month=$(date +%m)/day=$(date +%d)/${LOG_FILE_NAME}"
+
+          echo "Uploading logs to s3://${S3_LOG_BUCKET}/${S3_PATH}"
+          aws s3 cp "${FULL_LOG_PATH}" "s3://${S3_LOG_BUCKET}/${S3_PATH}"
+          echo "Logs uploaded to S3."
+
+          # 3. Send SNS Notification (update message to reference S3/Athena)
+          # Ensure your AWS_ACCOUNT_ID and AWS_REGION are correct here.
+          # You can define them as GitHub Actions vars or secrets if preferred.
+          AWS_ACCOUNT_ID="<YOUR_AWS_ACCOUNT_ID>" # e.g., ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_REGION="us-east-1" # e.g., ${{ vars.aws_region }}
+
+          MESSAGE_SUBJECT="GitHub Actions Workflow FAILED: ${WORKFLOW_NAME} - Stage: ${STAGE}"
+          MESSAGE_BODY="Workflow '${WORKFLOW_NAME}' for stage '${STAGE}' failed.\n"
+          MESSAGE_BODY+="Job: '${JOB_NAME}'\n"
+          MESSAGE_BODY+="----------------------------------------------------------\n"
+          MESSAGE_BODY+="Detailed logs available in S3 for Athena/Grafana querying:\n"
+          MESSAGE_BODY+="S3 Path: s3://${S3_LOG_BUCKET}/${S3_PATH}\n\n"
+          MESSAGE_BODY+="For direct access to the GitHub workflow run logs, visit:\n"
+          MESSAGE_BODY+="${RUN_URL}/jobs/${JOB_NAME}\n\n"
+          MESSAGE_BODY+="Full workflow run: ${RUN_URL}"
+
+          aws sns publish \
+            --topic-arn "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:app-alerts-topic-${STAGE}" \
+            --subject "${MESSAGE_SUBJECT}" \
+            --message "${MESSAGE_BODY}"
