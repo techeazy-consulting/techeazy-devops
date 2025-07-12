@@ -61,7 +61,7 @@ jobs:
           JOB_NAME="${{ github.job }}"
 
           # Get the S3 bucket name from GitHub Secret
-          S3_LOG_BUCKET="${{ secrets.GITHUB_ACTIONS_LOG_BUCKET }}" 
+          S3_LOG_BUCKET="${{ secrets.GIT_ACTIONS_LOG_BUCKET }}" 
 
           # 1. Fetch the entire workflow log bundle using GitHub API
           echo "Fetching logs for run ID: ${RUN_ID}"
@@ -69,7 +69,7 @@ jobs:
 
           # Download the zip file containing all job logs for this run
           # -s for silent, -H for header (auth token), -L for redirects, -o for output file
-          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -L "${WORKFLOW_LOG_ZIP_URL}" -o workflow_logs.zip
+          curl -s -H "Authorization: token ${{ secrets.GH_TOKEN }}" -L "${WORKFLOW_LOG_ZIP_URL}" -o workflow_logs.zip
 
           # Unzip logs into a directory
           unzip -qq workflow_logs.zip -d workflow_logs
