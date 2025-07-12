@@ -16,32 +16,44 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Do something risky
-        run: exit 1  # Force failure for demo
+      - name: Simulate failure
+        run: exit 1  # Force failure
 
   upload_logs_on_failure:
     runs-on: ubuntu-latest
     needs: build
-    if: ${{ failure() }}  # Run ONLY if previous job fails
+    if: ${{ failure() }}  # Only run if 'build' fails
     steps:
-      - name: Download workflow logs
+      - name: Wait for logs to be ready
+        run: sleep 30  # Give GitHub time to finalize logs
+
+      - name: Download logs via API
         uses: actions/github-script@v6
+        id: download_logs
         with:
           script: |
-            const logs = await github.rest.actions.downloadWorkflowRunLogs({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId,
-            });
-            return logs.data;
+            try {
+              const response = await github.rest.actions.downloadWorkflowRunLogs({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId,
+              });
+              return response.data;  // Binary ZIP data
+            } catch (error) {
+              core.setFailed(Failed to fetch logs: ${error.message});
+              return null;
+            }
 
-      - name: Upload to S3
+      - name: Configure AWS Credentials
+        if: steps.download_logs.outputs.result != null
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - run: |
+      - name: Upload to S3
+        if: steps.download_logs.outputs.result != null
+        run: |
           echo "${{ steps.download_logs.outputs.result }}" > logs.zip
           aws s3 cp logs.zip s3://your-bucket/failed-logs/${{ github.run_id }}.zip
