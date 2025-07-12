@@ -59,84 +59,51 @@ jobs:
             -var "stage=${{ github.event.inputs.stage }}"
         working-directory: ./terraform
 
-      - name: Fetch and Upload Workflow Logs to S3 on Failure (Debug)
-        if: failure()
+      - name: Fetch and Upload Workflow Logs to S3 on Failure
+        if: failure() # This step runs ONLY if any previous step in this job fails
         run: |
           STAGE="${{ github.event.inputs.stage }}"
           WORKFLOW_NAME="${{ github.workflow }}"
           RUN_ID="${{ github.run_id }}"
           JOB_NAME="${{ github.job }}"
           
+          # Get the S3 bucket name from Terraform output (passed as a workflow secret or var)
+          # Assuming you've stored the Terraform output bucket name as a GitHub Secret, e.g., GITHUB_ACTIONS_LOG_BUCKET
           S3_LOG_BUCKET="${{ secrets.GIT_ACTIONS_LOG_BUCKET }}" 
           
-          echo "--- Starting Log Fetch & Upload Debug ---"
-          echo "Attempting to fetch logs for Workflow: ${WORKFLOW_NAME}, Run ID: ${RUN_ID}, Job: ${JOB_NAME}"
-          
+          # 1. Fetch the entire workflow log bundle using GitHub API
+          echo "Fetching logs for run ID: ${RUN_ID}"
           WORKFLOW_LOG_ZIP_URL="https://api.github.com/repos/${{ github.repository }}/actions/runs/${RUN_ID}/logs"
-          echo "GitHub API Log URL: ${WORKFLOW_LOG_ZIP_URL}"
-
-          # --- ADD A SHORT DELAY HERE ---
-          echo "Waiting 10 seconds for logs to become available via API..."
-          sleep 10 # Wait for 10 seconds. You can adjust this if needed (e.g., 5-30 seconds).
-          echo "Resuming log download attempt."
-          # --- END DELAY ---
-
-          CURL_OUTPUT_FILE="curl_debug.log"
-          HTTP_STATUS=$(curl -s -v -H "Authorization: token ${{ secrets.GH_TOKEN }}" -L "${WORKFLOW_LOG_ZIP_URL}" -o workflow_logs.zip --write-out "%{http_code}" 2> "${CURL_OUTPUT_FILE}")
           
-          echo "HTTP Status Code from log download: ${HTTP_STATUS}"
-          echo "--- Curl Debug Output (from ${CURL_OUTPUT_FILE}) ---"
-          cat "${CURL_OUTPUT_FILE}"
-          echo "-------------------------------------"
-
-          if [ "${HTTP_STATUS}" -ne "200" ]; then
-              echo "Error: Failed to download workflow logs. HTTP Status: ${HTTP_STATUS}"
-              echo "Content of workflow_logs.zip (if any, might be an error page from GitHub):"
-              cat workflow_logs.zip || echo "workflow_logs.zip is empty or unreadable."
-              exit 1
-          fi
-
-          if ! file workflow_logs.zip | grep -q "Zip archive data"; then
-              echo "Error: Downloaded file 'workflow_logs.zip' is NOT a valid ZIP archive."
-              echo "Content of workflow_logs.zip:"
-              cat workflow_logs.zip || echo "workflow_logs.zip is empty or unreadable."
-              exit 1
-          fi
-          echo "Verification: workflow_logs.zip is a valid ZIP archive. Proceeding with unzip."
-
+          curl -s -H "Authorization: token ${{ secrets.GH_TOKEN }}" -L "${WORKFLOW_LOG_ZIP_URL}" -o workflow_logs.zip
           unzip -qq workflow_logs.zip -d workflow_logs
-          if [ $? -ne 0 ]; then
-              echo "Error: 'unzip' command failed. This should not happen if the file was a valid zip."
-              exit 1
-          fi
-          echo "Successfully unzipped logs."
 
+          # Combine all individual job logs into one file for easier upload/parsing
+          # Name it uniquely for S3
           LOG_FILE_NAME="${WORKFLOW_NAME}_${STAGE}_${JOB_NAME}_${RUN_ID}_$(date +%Y%m%d%H%M%S).log"
           FULL_LOG_PATH="./workflow_logs/${LOG_FILE_NAME}"
           
-          find workflow_logs -type f -name "*.txt" -exec cat {} + > "${FULL_LOG_PATH}" 2>/dev/null || echo "No detailed .txt logs found within the zip archive, or extraction error." > "${FULL_LOG_PATH}"
-          echo "Combined logs into: ${FULL_LOG_PATH}"
+          # Ensure a file is created even if unzip fails, to have something to upload
+          find workflow_logs -type f -name "*.txt" -exec cat {} + > "${FULL_LOG_PATH}" || echo "No detailed logs found or error during log extraction." > "${FULL_LOG_PATH}"
           
+          # 2. Upload the combined log file to S3
           S3_PATH="workflow_logs/year=$(date +%Y)/month=$(date +%m)/day=$(date +%d)/${LOG_FILE_NAME}"
 
           echo "Uploading logs to s3://${S3_LOG_BUCKET}/${S3_PATH}"
           aws s3 cp "${FULL_LOG_PATH}" "s3://${S3_LOG_BUCKET}/${S3_PATH}"
-          if [ $? -ne 0 ]; then
-              echo "Error: S3 upload failed."
-              exit 1
-          fi
           echo "Logs uploaded to S3."
 
-          AWS_ACCOUNT_ID="${{ secrets.YOUR_AWS_ACCOUNT_ID }}"
-          AWS_REGION="us-east-1" 
-
+          # 3. Send SNS Notification (as before, but update message to reference S3/Athena)
+          AWS_ACCOUNT_ID="${{ secrets.YOUR_AWS_ACCOUNT_ID }}"  # Replace or use secret
+          AWS_REGION="us-east-1" # As defined in your configure-aws-credentials step
+          
           MESSAGE_SUBJECT="GitHub Actions Workflow FAILED: ${WORKFLOW_NAME} - Stage: ${STAGE}"
           MESSAGE_BODY="Workflow '${WORKFLOW_NAME}' for stage '${STAGE}' failed.\n"
           MESSAGE_BODY+="Job: '${JOB_NAME}'\n"
           MESSAGE_BODY+="----------------------------------------------------------\n"
           MESSAGE_BODY+="Detailed logs available in S3 for Athena/Grafana querying:\n"
           MESSAGE_BODY+="S3 Path: s3://${S3_LOG_BUCKET}/${S3_PATH}\n\n"
-          MESSAGE_BODY+="For direct access to the GitHub workflow run logs, visit:\n"
+          MESSAGE_BODY+="For direct access to the GitHub workflow run, visit:\n"
           MESSAGE_BODY+="${RUN_URL}/jobs/${JOB_NAME}\n\n"
           MESSAGE_BODY+="Full workflow run: ${RUN_URL}"
 
@@ -144,7 +111,3 @@ jobs:
             --topic-arn "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:app-alerts-topic-${STAGE}" \
             --subject "${MESSAGE_SUBJECT}" \
             --message "${MESSAGE_BODY}"
-          if [ $? -ne 0 ]; then
-              echo "Error: SNS notification failed."
-          fi
-          echo "--- Log Fetch & Upload Debug Complete ---"
