@@ -91,3 +91,4 @@ echo "Application log upload attempted."
 # Shutdown the instance after the specified time
 sudo shutdown -h +"$STOP_INSTANCE"  
 
+exit 1 
