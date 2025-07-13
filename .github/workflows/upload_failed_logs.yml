@@ -2,7 +2,7 @@ name: Upload Failed Workflow Logs to S3
 
 on:
   workflow_run:
-    workflows: ["destroy the infrastructure"] # Replace with the name of the workflow you want to monitor
+    workflows: ["destroy the infrastructure"]
     types:
       - completed
 
@@ -12,27 +12,33 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
 
     permissions:
-      id-token: write # Required for authenticating with AWS using OIDC
-      actions: read   # Required for export-workflow-logs to retrieve workflow logs
+      id-token: write
+      actions: read
 
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::339712898435:role/GitHubActionsS3UploadRole # Your IAM Role ARN
-          aws-region: us-east-1 # Your AWS Region
-        id: aws-creds # <--- Give this step an ID to access its outputs
+          role-to-assume: arn:aws:iam::339712898435:role/GitHubActionsS3UploadRole
+          aws-region: us-east-1
+        id: aws-creds # This ID is crucial for accessing outputs
+
+      - name: Debug AWS Credentials Outputs # <--- NEW DEBUG STEP
+        run: |
+          echo "AWS_ACCESS_KEY_ID: ${{ steps.aws-creds.outputs.aws-access-key-id }}"
+          echo "AWS_SECRET_ACCESS_KEY: ${{ steps.aws-creds.outputs.aws-secret-access-key }}"
+          echo "AWS_SESSION_TOKEN: ${{ steps.aws-creds.outputs.aws-session-token }}"
+        # IMPORTANT: These outputs are sensitive. Ensure you delete this debug step after troubleshooting!
 
       - name: Export Workflow Run Logs
-        uses: timorthi/export-workflow-logs@v1.3.0 # Or the latest version
+        uses: timorthi/export-workflow-logs@v1.3.0
         with:
-          repo-token: ${{ secrets.GH_TOKEN }}
+          repo-token: ${{ secrets.GH_TOKEN }} # Keeping this as per your requirement
           run-id: ${{ github.event.workflow_run.id }}
           destination: s3
-          aws-region: us-east-1 # Your AWS Region
+          aws-region: us-east-1
           s3-bucket-name: sumit-4254
           s3-key: "failed-workflow-logs/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.created_at }}-${{ github.sha }}-runId-${{ github.event.workflow_run.id }}.zip"
-          # Pass the credentials explicitly from the previous step's outputs
           aws-access-key-id: ${{ steps.aws-creds.outputs.aws-access-key-id }}
           aws-secret-access-key: ${{ steps.aws-creds.outputs.aws-secret-access-key }}
-          aws-session-token: ${{ steps.aws-creds.outputs.aws-session-token }} # Session token is crucial for OIDC temporary creds
+          aws-session-token: ${{ steps.aws-creds.outputs.aws-session-token }}
