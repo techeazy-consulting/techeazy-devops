@@ -2,7 +2,7 @@ name: Upload Failed Workflow Logs to S3
 
 on:
   workflow_run:
-    workflows: ["destroy the infrastructure"]
+    workflows: ["destroy the infrastructure"] # Your main workflow name
     types:
       - completed
 
@@ -11,41 +11,56 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
 
-    # You still need 'actions: read' for export-workflow-logs
-    # 'id-token: write' is NOT needed if you're not using OIDC
     permissions:
-      actions: read # Only this permission is strictly needed now for the GitHub API interaction
+      id-token: write # Required for authenticating with AWS using OIDC
+      actions: read   # Required for export-workflow-logs to retrieve workflow logs
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2 # Or @v4 for latest
-
-      - name: Configure AWS Credentials # <--- THIS IS THE ALTERNATIVE BLOCK
-        uses: aws-actions/configure-aws-credentials@v1 # Can use @v4 here too
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-          aws-output: json # Optional, but generally good practice
+          role-to-assume: arn:aws:iam::339712898435:role/GitHubActionsS3UploadRole # Your IAM Role ARN
+          aws-region: us-east-1 # Your AWS Region
+        id: aws-creds # Essential for accessing outputs
+
+      - name: Verify AWS Credentials (Outputs and Environment Variables) # <--- CRITICAL DEBUG STEP
+        run: |
+          echo "--- From Step Outputs ---"
+          echo "Access Key ID (output): ${{ steps.aws-creds.outputs.aws-access-key-id }}"
+          echo "Secret Access Key (output): ${{ steps.aws-creds.outputs.aws-secret-access-key }}"
+          echo "Session Token (output): ${{ steps.aws-creds.outputs.aws-session-token }}"
+          
+          echo "--- From Environment Variables ---"
+          echo "AWS_ACCESS_KEY_ID (env): $AWS_ACCESS_KEY_ID"
+          echo "AWS_SECRET_ACCESS_KEY (env): $AWS_SECRET_ACCESS_KEY"
+          echo "AWS_SESSION_TOKEN (env): $AWS_SESSION_TOKEN"
+          
+          # This will cause the workflow to fail if any key is missing, for explicit debugging
+          if [ -z "${{ steps.aws-creds.outputs.aws-access-key-id }}" ] || \
+             [ -z "${{ steps.aws-creds.outputs.aws-secret-access-key }}" ] || \
+             [ -z "${{ steps.aws-creds.outputs.aws-session-token }}" ]; then
+            echo "::error::AWS credentials outputs are empty!"
+            exit 1
+          fi
+          if [ -z "$AWS_ACCESS_KEY_ID" ] || \
+             [ -z "$AWS_SECRET_ACCESS_KEY" ] || \
+             [ -z "$AWS_SESSION_TOKEN" ]; then
+            echo "::error::AWS credentials environment variables are empty!"
+            exit 1
+          fi
+        shell: bash
+        # IMPORTANT: This step exposes sensitive credentials in logs. REMOVE IT after troubleshooting.
 
       - name: Export Workflow Run Logs
         uses: timorthi/export-workflow-logs@v1.3.0
         with:
-          repo-token: ${{ secrets.GH_TOKEN }} # Your existing GH_TOKEN
+          repo-token: ${{ secrets.GH_TOKEN }} # Keeping this as per your requirement
           run-id: ${{ github.event.workflow_run.id }}
           destination: s3
           aws-region: us-east-1
           s3-bucket-name: sumit-4254
           s3-key: "failed-workflow-logs/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.created_at }}-${{ github.sha }}-runId-${{ github.event.workflow_run.id }}.zip"
-          # When using static keys, you don't need to explicitly pass
-          # aws-access-key-id, aws-secret-access-key, aws-session-token
-          # to timorthi/export-workflow-logs because aws-actions/configure-aws-credentials
-          # will set them as environment variables.
-          # The previous error "required: aws-access-key-id, aws-secret-access-key" from timorthi's action
-          # likely indicated that it's designed to pick up env vars by default,
-          # but was getting confused by *empty* OIDC outputs being explicitly passed.
-          # Let's remove them for this static key approach to avoid confusion.
-          # (You can remove these 3 lines below if using this static key method)
-          # aws-access-key-id: ${{ steps.aws-creds.outputs.aws-access-key-id }}
-          # aws-secret-access-key: ${{ steps.aws-creds.outputs.aws-secret-access-key }}
-          # aws-session-token: ${{ steps.aws-creds.outputs.aws-session-token }}
+          # Explicitly pass credentials obtained from the first step's outputs
+          aws-access-key-id: ${{ steps.aws-creds.outputs.aws-access-key-id }}
+          aws-secret-access-key: ${{ steps.aws-creds.outputs.aws-secret-access-key }}
+          aws-session-token: ${{ steps.aws-creds.outputs.aws-session-token }}
