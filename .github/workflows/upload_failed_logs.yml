@@ -2,7 +2,7 @@ name: Upload Failed Workflow Logs to S3
 
 on:
   workflow_run:
-    workflows: ["<Your Main Workflow Name Here>"] # Replace with the name of the workflow you want to monitor
+    workflows: ["destroy the infrastructure"] # Replace with the name of the workflow you want to monitor
     types:
       - completed
 
@@ -20,16 +20,16 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/GitHubActionsS3UploadRole # Replace with your IAM Role ARN
-          aws-region: <YOUR_AWS_REGION> # e.g., us-east-1, ap-south-1
+          role-to-assume: arn:aws:iam::${{ secrets.YOUR_AWS_ACCOUNT_ID }}:role/GitHubActionsS3UploadRole # Replace with your IAM Role ARN
+          aws-region: us-east-1 # e.g., us-east-1, ap-south-1
 
       - name: Export Workflow Run Logs
         uses: timorthi/export-workflow-logs@v1.3.0 # Or the latest version
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.GH_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
           destination: s3
-          aws-region: <YOUR_AWS_REGION> # e.g., us-east-1, ap-south-1
+          aws-region: us-east-1 # e.g., us-east-1, ap-south-1
           s3-bucket-name: sumit-4254
           s3-key: "failed-workflow-logs/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.created_at }}-${{ github.sha }}-runId-${{ github.event.workflow_run.id }}.zip"
           # You can customize the s3-key for your desired S3 path/filename.
