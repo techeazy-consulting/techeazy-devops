@@ -26,12 +26,13 @@ jobs:
       - name: Export Workflow Run Logs
         uses: timorthi/export-workflow-logs@v1.3.0 # Or the latest version
         with:
-          repo-token: ${{ secrets.GH_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
           destination: s3
-          aws-region: us-east-1 # e.g., us-east-1, ap-south-1
+          aws-region: us-east-1 # Your AWS Region
           s3-bucket-name: sumit-4254
           s3-key: "failed-workflow-logs/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.created_at }}-${{ github.sha }}-runId-${{ github.event.workflow_run.id }}.zip"
-          # You can customize the s3-key for your desired S3 path/filename.
-          # The above example creates a path like:
-          # failed-workflow-logs/YourWorkflowName/2025-07-13T08:37:37Z-abcdef123456-runId-12345.zip
+          # Pass the credentials explicitly from the previous step's outputs
+          aws-access-key-id: ${{ steps.aws-creds.outputs.aws-access-key-id }}
+          aws-secret-access-key: ${{ steps.aws-creds.outputs.aws-secret-access-key }}
+          aws-session-token: ${{ steps.aws-creds.outputs.aws-session-token }} # Session token is crucial for OIDC temporary creds
