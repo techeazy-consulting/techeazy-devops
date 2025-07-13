@@ -35,3 +35,27 @@ jobs:
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
+
+      - name: Download and Unzip Logs
+        run: |
+          # RECONSTRUCT THE S3 PATH OF THE ZIPPED FILE
+          # This path must exactly match the 's3-key' defined in the previous step
+          ZIPPED_S3_PATH="s3://sumit-4254/workflow-logs-zipped/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.id }}/${{ github.event.workflow_run.id }}_full_logs.zip"
+          
+          # Define local paths on the runner
+          LOCAL_ZIP_FILE="workflow_logs_run_${{ github.event.workflow_run.id }}.zip"
+          UNZIPPED_DIR="workflow_logs_unzipped_${{ github.event.workflow_run.id }}"
+
+          echo "Downloading ${ZIPPED_S3_PATH} to ${LOCAL_ZIP_FILE}..."
+          aws s3 cp "${ZIPPED_S3_PATH}" "${LOCAL_ZIP_FILE}"
+          
+          echo "Unzipping ${LOCAL_ZIP_FILE} to ${UNZIPPED_DIR}..."
+          mkdir -p "${UNZIPPED_DIR}"
+          unzip "${LOCAL_ZIP_FILE}" -d "${UNZIPPED_DIR}"
+
+          # Clean up the downloaded zip after unzipping
+          rm "${LOCAL_ZIP_FILE}"
+          
+          # Make the unzipped directory path available for the next step
+          echo "unzipped_path=${UNZIPPED_DIR}" >> $GITHUB_OUTPUT
+        id: unzip_logs # Give this step an ID to reference its output
