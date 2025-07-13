@@ -2,7 +2,7 @@ name: Upload Failed Workflow Logs to S3
 
 on:
   workflow_run:
-    workflows: ["destroy the infrastructure"] # Confirm this is the exact name of your main workflow
+    workflows: ["destroy the infrastructure"]
     types:
       - completed
 
@@ -12,43 +12,26 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
 
     permissions:
-      id-token: write # Required for authenticating with AWS using OIDC
-      actions: read   # Required for export-workflow-logs to retrieve workflow logs
+      id-token: write
+      actions: read
 
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::339712898435:role/GitHubActionsS3UploadRole # Your IAM Role ARN
-          aws-region: us-east-1 # Your AWS Region
-        # No 'id' needed here if we only rely on environment variables, but keeping it doesn't hurt.
-
-      - name: Extract AWS Credentials from Environment # <--- NEW STEP TO EXTRACT & EXPOSE ENV VARS AS OUTPUTS
-        id: extract-aws-creds # ID for this new step
-        run: |
-          # Read environment variables (which aws-actions/configure-aws-credentials sets)
-          AWS_KEY_ID="$AWS_ACCESS_KEY_ID"
-          AWS_SECRET_KEY="$AWS_SECRET_ACCESS_KEY"
-          AWS_SESSION="$AWS_SESSION_TOKEN"
-
-          # Export them as outputs for this step
-          echo "::set-output name=aws-access-key-id::$AWS_KEY_ID"
-          echo "::set-output name=aws-secret-access-key::$AWS_SECRET_KEY"
-          echo "::set-output name=aws-session-token::$AWS_SESSION"
-        shell: bash
-        # WARNING: This step explicitly prints credentials to logs, though GitHub usually masks them.
-        # REMOVE THIS STEP AFTER SUCCESSFUL TROUBLESHOOTING if you are concerned.
+          role-to-assume: arn:aws:iam::339712898435:role/GitHubActionsS3UploadRole
+          aws-region: us-east-1
 
       - name: Export Workflow Run Logs
         uses: timorthi/export-workflow-logs@v1.3.0
         with:
-          repo-token: ${{ secrets.GH_TOKEN }} # Your existing GH_TOKEN
+          repo-token: ${{ secrets.GH_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
           destination: s3
-          aws-region: us-east-1 # Your AWS Region
+          aws-region: us-east-1
           s3-bucket-name: sumit-4254
           s3-key: "failed-workflow-logs/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.created_at }}-${{ github.sha }}-runId-${{ github.event.workflow_run.id }}.zip"
-          # *** NOW PASS THE CREDENTIALS FROM OUR NEW 'extract-aws-creds' STEP'S OUTPUTS ***
-          aws-access-key-id: ${{ steps.extract-aws-creds.outputs.aws-access-key-id }}
-          aws-secret-access-key: ${{ steps.extract-aws-creds.outputs.aws-secret-access-key }}
-          aws-session-token: ${{ steps.extract-aws-creds.outputs.aws-session-token }}
+          # Pass the credentials using 'env' context, as 'configure-aws-credentials' sets them as environment variables
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
