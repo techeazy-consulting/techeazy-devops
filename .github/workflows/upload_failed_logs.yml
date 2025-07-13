@@ -25,7 +25,7 @@ jobs:
           aws-region: us-east-1 # Your AWS Region
 
       - name: Export Workflow Run Logs (Zipped) to S3
-        id: export_zipped_logs # Give this step an ID to reference its output/path
+        id: export_zipped_logs # We keep the ID just in case we need to reference the step itself, though not its outputs for S3 path
         uses: timorthi/export-workflow-logs@v1.3.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }} 
@@ -34,14 +34,20 @@ jobs:
           aws-region: us-east-1
           s3-bucket-name: sumit-4254
           # Define a clear S3 key for the ZIPPED log file, including a unique folder per run ID
+          # THIS IS THE PATH YOU'LL RECONSTRUCT IN THE NEXT STEP
           s3-key: "workflow-logs-zipped/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.id }}/${{ github.event.workflow_run.id }}_full_logs.zip"
-          # Store the full S3 path of the uploaded zip as a step output for later use
-          output-s3-key-variable: S3_ZIPPED_LOG_PATH
+          
+          # --- CRITICAL CORRECTION: REMOVE THESE LINES ---
+          # aws-access-key-id:
+          # aws-secret-access-key:
+          # aws-session-token:
+          # --- END CRITICAL CORRECTION ---
       
       - name: Download and Unzip Logs
         run: |
-          # The S3 path where the zipped log file was uploaded
-          ZIPPED_S3_PATH="${{ steps.export_zipped_logs.outputs.S3_ZIPPED_LOG_PATH }}"
+          # RECONSTRUCT THE S3 PATH OF THE ZIPPED FILE
+          # This path must exactly match the 's3-key' defined in the previous step
+          ZIPPED_S3_PATH="s3://sumit-4254/workflow-logs-zipped/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.id }}/${{ github.event.workflow_run.id }}_full_logs.zip"
           
           # Define local paths on the runner
           LOCAL_ZIP_FILE="workflow_logs_run_${{ github.event.workflow_run.id }}.zip"
@@ -66,11 +72,9 @@ jobs:
           UNZIPPED_LOCAL_PATH="${{ steps.unzip_logs.outputs.unzipped_path }}"
           
           # Define the S3 path for the UNZIPPED logs
-          # It's recommended to put unzipped logs in a different prefix/bucket for Athena
           UNZIPPED_S3_PREFIX="s3://sumit-4254/workflow-logs-unzipped/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.id }}/"
           
-          echo "Uploading unzipped logs from ${UNZIPPED_LOCAL_PATH} to ${UNZIPPED_S3_PREFIX}..."
-          # Use --recursive to upload all files and subdirectories from the unzipped folder
+          echo "Uploading unzipped logs from ${UNZIPPED_LOCAL_PATH}/ to ${UNZIPPED_S3_PREFIX}"
           aws s3 cp "${UNZIPPED_LOCAL_PATH}/" "${UNZIPPED_S3_PREFIX}" --recursive
           
           # Make the unzipped S3 prefix available for the SNS notification
