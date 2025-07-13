@@ -9,74 +9,29 @@ on:
 jobs:
   upload_logs:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }} 
-    
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+
     permissions:
       id-token: write
-      actions: read   
-      # Ensure the assumed IAM role also has s3:GetObject for downloading the zip
-      # and s3:PutObject on the new unzipped log path.
+      actions: read
 
     steps:
-      - name: Configure AWS Credentials for S3 Operations
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::339712898435:role/GitHubActionsS3UploadRole
-          aws-region: us-east-1 # Your AWS Region
+          aws-region: us-east-1
 
-      - name: Export Workflow Run Logs (Zipped) to S3
-        id: export_zipped_logs # We keep the ID just in case we need to reference the step itself, though not its outputs for S3 path
+      - name: Export Workflow Run Logs
         uses: timorthi/export-workflow-logs@v1.3.0
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }} 
-          run-id: ${{ github.event.workflow_run.id }} 
+          repo-token: ${{ secrets.GH_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
           destination: s3
           aws-region: us-east-1
           s3-bucket-name: sumit-4254
-          # Define a clear S3 key for the ZIPPED log file, including a unique folder per run ID
-          # THIS IS THE PATH YOU'LL RECONSTRUCT IN THE NEXT STEP
-          s3-key: "workflow-logs-zipped/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.id }}/${{ github.event.workflow_run.id }}_full_logs.zip"
-          
-          # --- CRITICAL CORRECTION: REMOVE THESE LINES ---
-          # aws-access-key-id:
-          # aws-secret-access-key:
-          # aws-session-token:
-          # --- END CRITICAL CORRECTION ---
-      
-      - name: Download and Unzip Logs
-        run: |
-          # RECONSTRUCT THE S3 PATH OF THE ZIPPED FILE
-          # This path must exactly match the 's3-key' defined in the previous step
-          ZIPPED_S3_PATH="s3://sumit-4254/workflow-logs-zipped/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.id }}/${{ github.event.workflow_run.id }}_full_logs.zip"
-          
-          # Define local paths on the runner
-          LOCAL_ZIP_FILE="workflow_logs_run_${{ github.event.workflow_run.id }}.zip"
-          UNZIPPED_DIR="workflow_logs_unzipped_${{ github.event.workflow_run.id }}"
-
-          echo "Downloading ${ZIPPED_S3_PATH} to ${LOCAL_ZIP_FILE}..."
-          aws s3 cp "${ZIPPED_S3_PATH}" "${LOCAL_ZIP_FILE}"
-          
-          echo "Unzipping ${LOCAL_ZIP_FILE} to ${UNZIPPED_DIR}..."
-          mkdir -p "${UNZIPPED_DIR}"
-          unzip "${LOCAL_ZIP_FILE}" -d "${UNZIPPED_DIR}"
-
-          # Clean up the downloaded zip after unzipping
-          rm "${LOCAL_ZIP_FILE}"
-          
-          # Make the unzipped directory path available for the next step
-          echo "unzipped_path=${UNZIPPED_DIR}" >> $GITHUB_OUTPUT
-        id: unzip_logs # Give this step an ID to reference its output
-      
-      - name: Upload Unzipped Logs to S3
-        run: |
-          UNZIPPED_LOCAL_PATH="${{ steps.unzip_logs.outputs.unzipped_path }}"
-          
-          # Define the S3 path for the UNZIPPED logs
-          UNZIPPED_S3_PREFIX="s3://sumit-4254/workflow-logs-unzipped/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.id }}/"
-          
-          echo "Uploading unzipped logs from ${UNZIPPED_LOCAL_PATH}/ to ${UNZIPPED_S3_PREFIX}"
-          aws s3 cp "${UNZIPPED_LOCAL_PATH}/" "${UNZIPPED_S3_PREFIX}" --recursive
-          
-          # Make the unzipped S3 prefix available for the SNS notification
-          echo "unzipped_s3_prefix=${UNZIPPED_S3_PREFIX}" >> $GITHUB_OUTPUT
-        id: upload_unzipped_logs # Give this step an ID
+          s3-key: "failed-workflow-logs/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.created_at }}-${{ github.sha }}-runId-${{ github.event.workflow_run.id }}.zip"
+          # Pass the credentials using 'env' context, as 'configure-aws-credentials' sets them as environment variables
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
