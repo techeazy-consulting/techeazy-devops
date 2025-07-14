@@ -59,3 +59,31 @@ jobs:
           aws s3 cp "${LOCAL_LOG_PATH}" "${S3_FULL_PATH}"
           
           echo "uploaded_s3_path=${S3_FULL_PATH}" >> $GITHUB_OUTPUT
+
+      - name: Send SNS Notification on Workflow Failure
+        if: success() 
+        run: |
+          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          CONCLUSION="${{ github.event.workflow_run.conclusion }}" 
+          RUN_URL="${{ github.event.workflow_run.html_url }}" 
+          
+          UPLOADED_S3_PATH="s3://sumit-4254/failed-workflow-logs/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.id }}_full_logs.txt"
+
+          AWS_ACCOUNT_ID="339712898435" 
+          AWS_REGION="us-east-1" 
+
+          MESSAGE_SUBJECT="GitHub Actions Workflow FAILED: ${WORKFLOW_NAME}"
+          MESSAGE_BODY="Workflow '${WORKFLOW_NAME}' (Run ID: ${RUN_ID}) has concluded with status: ${CONCLUSION}.\n"
+          MESSAGE_BODY+="----------------------------------------------------------\n"
+          MESSAGE_BODY+="Full Logs (ready for Athena) in S3: ${UPLOADED_S3_PATH}\n\n"
+          MESSAGE_BODY+="For full GitHub workflow run details, visit:\n"
+          MESSAGE_BODY+="${RUN_URL}" 
+          
+          aws sns publish \
+            --topic-arn "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:app-alerts-topic-admin" \
+            --subject "${MESSAGE_SUBJECT}" \
+            --message "${MESSAGE_BODY}"
+          if [ $? -ne 0 ]; then
+              echo "Error: SNS notification failed."
+          fi
