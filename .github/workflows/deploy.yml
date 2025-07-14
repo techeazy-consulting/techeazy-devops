@@ -1,74 +1,99 @@
-name: Deploy to EC2
+name: EC2 Deploy via terraform
 
 on:
+  push:
+    branches:
+      - main
+      - feature/devops-assignment-3
+
+    tags:
+      - deploy-dev
+      - deploy-prod
+      
   workflow_dispatch:
     inputs:
       stage:
-        description: 'Deployment stage'
+        description: "Deployment stage (e.g., dev, prod)"
         required: true
-        default: 'dev'
-        options:
-          - dev
-          - qa
-          - prod 
- 
+        default: "dev" 
 jobs:
   deploy:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
-    steps:
-      - name: Validate input
-        run: |
-          if [[ "${{ github.event.inputs.stage }}" != "dev" && "${{ github.event.inputs.stage }}" != "qa" && "${{ github.event.inputs.stage }}" != "prod" ]]; then
-            echo "Invalid input: ${{ github.event.inputs.stage }}. Please use one of the following: dev, qa, prod."
-            exit 1
-          fi
-          
-      - name: Checkout code
-        uses: actions/checkout@v2
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
+    env:
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with: 
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-          aws-output: json
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Initialize Terraform
-        uses: hashicorp/setup-terraform@v1
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: '1.2.3'
+          terraform_version: 1.5.7    
 
-      - name: Apply Terraform configuration
-        # Use the 'env' block to pass the GitHub token as a Terraform variable
-        env:
-          # Terraform automatically picks up environment variables prefixed with TF_VAR_
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+      - name: Terraform init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform apply
+        working-directory: ./terraform
+        run: terraform apply -auto-approve -var="stage=${{ github.event.inputs.stage || 'dev' }}" -var-file="dev.tfvars"
+        
+
+      - name: Get EC2 Public IP   
+        id: ec2_ip   
         run: |
-          terraform init
-          terraform validate
-          VAR_FILE="${{ github.event.inputs.stage }}.json"
-          terraform apply -var-file="$VAR_FILE" --auto-approve \
-            -var "stage=${{ github.event.inputs.stage }}" \
-            -var "github_token=${{ secrets.GH_TOKEN }}"
-        working-directory: ./terraform # Ensure this path is correct for your Terraform files
+          ip=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=techeazy-instance" \
+            --query "Reservations[*].Instances[*].PublicIpAddress" \
+            --output text | tr -d '\r' | tr -d '\n' | awk '{print $1}')
 
-
-      - name: Validate app health
-        run: |
-          VAR_STAGE="${{ github.event.inputs.stage }}"
-          EC2_PUBLIC_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyInstance-"$VAR_STAGE"" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
-          echo "--- Waiting 120 seconds for the application to initialize..."
-          sleep 120
-          echo "--- Wait complete. Starting health checks."
-          
-          # 4. Perform the frontend application health check.
-          echo "--- Checking frontend application health on port 80..."
-          if curl -f http://$EC2_PUBLIC_IP:80; then
-            echo "✅ SUCCESS: Frontend application is healthy and responding on port 80."
+          # Validate IP format
+          if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            echo "EC2_PUBLIC_IP=$ip" >> $GITHUB_ENV
+            echo "ec2_public_ip=$ip" >> $GITHUB_OUTPUT
+            echo "::debug::EC2_PUBLIC_IP is $ip"
           else
-            echo "❌ FAILURE: Frontend application is not responding or returned an error."
-            exit 1 # Fail the step if the curl command fails.
+            echo "::error::Invalid IP address format: $ip"
+            exit 1
           fi
 
-         
+      - name: Wait for EC2 SSH
+        run: |
+          sleep 60
+          echo "Waiting for EC2 to be ready..."
+
+      - name: Run Deployment Script via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.INSTANCE_KEY }}
+          script: |
+            cd /home/ec2-user
+            git clone --branch feature/devops-assignment-3 https://github.com/sohampatil44/techeazy-devops.git || true
+            cd techeazy-devops/scripts
+            chmod +x deploy.sh
+            ./deploy.sh techeazy-bucket
+
+      - name: Verify App Health
+        run: |
+          for i in {1..5}; do
+            if curl --fail http://${{ env.EC2_PUBLIC_IP }}; then
+              echo "App is healthy"
+              exit 0
+            fi
+            echo "Retrying in 5s..."
+            sleep 5
+          done
+          echo "App health check failed"
+          exit 1

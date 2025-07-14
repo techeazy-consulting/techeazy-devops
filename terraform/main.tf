@@ -1,169 +1,177 @@
+
+
+
 provider "aws" {
-  region = var.aws_region
+    region = "us-east-1"
 }
 
+resource "aws_instance" "instance1" {
+    ami = var.ami_id
+    instance_type = var.instance_type
+    subnet_id = var.subnet_id
+    key_name = var.key_name
+    security_groups = [var.security_group_id]
+    user_data = templatefile("${path.module}/user_data.tmpl.sh", {
+    bucket_name = var.bucket_name
+  })
 
-resource "aws_instance" "example1" {
-    ami = var.ami_value
-    instance_type = var.instance_type_value
-    vpc_security_group_ids = [aws_security_group.mysg.id]
-    iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name 
+    iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 
-    user_data = base64encode(templatefile("./${var.stage}_script.sh", {
-    REPO_URL            = var.repo_url_value
-    JAVA_VERSION        = var.java_version_value # Match JAVA_VERSION in script
-    REPO_DIR_NAME       = var.repo_dir_name    # Match REPO_DIR_NAME in script
-    STOP_INSTANCE       = var.stop_after_minutes # Match STOP_INSTANCE in script
-    S3_BUCKET_NAME      = var.s3_bucket_name     # Match S3_BUCKET_NAME in script
-    AWS_REGION_FOR_SCRIPT = var.aws_region       # NEW: Pass the AWS region from your provider config
-    GITHUB_TOKEN  = var.github_token
-    GIT_REPO_PATH = var.git_repo_path
-  }))
-
-  tags = {
-    Name = "MyInstance-${var.stage}"
-  }
-
-  depends_on = [
-    aws_s3_bucket.example
-  ]
-}
-
-
-
-resource "aws_security_group" "mysg" {
-  name = "webig"
-
-  ingress {
-    description = "HTTP from vpc"
-    from_port = 80
-    to_port = 80
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "ssh"
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-
-  tags = {
-    Name = "Web.sg-${var.stage}"
-  }
-
+    tags = {
+        Name = "techeazy-instance"
+        Stage = var.stage
+    }
   
 }
 
-resource "aws_s3_bucket" "example" {
-  bucket = var.s3_bucket_name 
 
-  #force_destroy = true 
+#IAM Role 1: Read only S-3
 
-  tags = {
-    Name        = "My bucket"
-    Environment = "Dev"
-  }
+resource "aws_iam_role" "s3_readonly_role" {
+    name = "s3_readonly_role"
+
+    assume_role_policy = jsonencode({
+        Version = "2012-10-17",
+        Statement = [{
+            Effect = "Allow",
+            Principal = {Service = "ec2.amazonaws.com"},
+            Action = "sts:AssumeRole"
+        }]
+    })
+  
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "example" {
-  bucket = aws_s3_bucket.example.id
+resource "aws_iam_policy" "s3_readonly_policy" {
+    name = "s3-readonly-policy"
+    policy = jsonencode({
+        Version = "2012-10-17",
+        Statement = [{
+            Action = ["s3:ListBucket","s3:GetObject"]
+            Effect = "Allow",
+            Resource = "*"
+        }]
+    }) 
+}
+
+resource "aws_iam_role_policy_attachment" "readonly_attach" {
+    role = aws_iam_role.s3_readonly_role.name
+    policy_arn = aws_iam_policy.s3_readonly_policy.arn
+  
+}
+
+#IAM Role 2:Write only S3
+
+resource "aws_iam_role" "s3_writeonly_role" {
+    name = "s3-writeonly-role"
+
+    assume_role_policy = jsonencode({
+        Version = "2012-10-17",
+        Statement = [{
+            Effect = "Allow",
+            Principal = {Service = "ec2.amazonaws.com"}
+            Action = "sts:AssumeRole"
+        }]
+    })
+  
+}
+
+resource "aws_iam_policy" "s3_writeonly_policy" {
+    name = "s3-writeonly-policy"
+    policy = jsonencode({
+        Version  ="2012-10-17",
+        Statement = [
+            {
+                Effect = "Allow",
+                Action = ["s3:PutObject","s3:CreateBucket"]
+                Resource = "*"
+
+            }
+        ]
+    })
+  
+}
+
+resource "aws_iam_role_policy_attachment" "writeonly_attach" {
+    role = aws_iam_role.s3_writeonly_role.name
+    policy_arn = aws_iam_policy.s3_writeonly_policy.arn
+  
+}
+
+#Instace profile for EC2
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+    name = "ec2-s3-writeonly-profile"
+    role = aws_iam_role.s3_writeonly_role.name
+  
+}
+
+#S3 bucket creation
+
+resource "aws_s3_bucket" "private_logs_bucket" {
+    bucket = var.bucket_name
+    force_destroy = true
+
+    tags = {
+      Name = "Private App Logs Bucket"
+    }
+  
+}
+
+resource "aws_s3_bucket_ownership_controls" "ownership" {
+  bucket = aws_s3_bucket.private_logs_bucket.id
 
   rule {
-    id     = "delete_app_logs_after_7_days"
-    status = "Enabled"
-
-    filter {
-      prefix = "app/logs/"
-    }
-
-    expiration {
-      days = 7
-    }
+    object_ownership = "BucketOwnerEnforced"
   }
 }
 
 
-resource "aws_iam_role" "s3_creator_uploader_role" {
-  name = "s3_creator_uploader_access_role"
+resource "aws_s3_bucket_lifecycle_configuration" "lifecycle_rule" {
+    bucket = aws_s3_bucket.private_logs_bucket.id
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Sid    = ""
-        Principal = {
-          Service = "ec2.amazonaws.com" 
-        }
-      },
-    ]
-  })
+    rule {
+      id = "delete-logs"
+      status = "Enabled"
+
+      expiration {
+        days = 7
+      }
+
+      filter {
+        prefix = ""
+      }
+    }
+  
+}
+
+resource "aws_iam_instance_profile" "readonly_profile" {
+    name = "ec2-readonly-profile"
+    role = aws_iam_role.s3_readonly_role.name
+  
+}
+
+#Second ec2 instamce with read only
+
+resource "aws_instance" "readonly_ec2" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  subnet_id     = var.subnet_id
+  key_name      = var.key_name
+  security_groups = [var.security_group_id]
+  iam_instance_profile = aws_iam_instance_profile.readonly_profile.name
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y aws-cli
+
+              echo "Listing logs from S3..." > /home/ec2-user/readonly_check.log
+              aws s3 ls s3://${var.bucket_name}/app/logs/ >> /home/ec2-user/readonly_check.log
+              aws s3 ls s3://${var.bucket_name}/system/ >> /home/ec2-user/readonly_check.log
+              EOF
 
   tags = {
-    Name = "S3CreatorUploaderRole-${var.stage}"
-  }
-}
-
-resource "aws_iam_policy" "s3_creator_uploader_policy" {
-  name        = "s3_creator_uploader_policy"
-  description = "Provides permissions to create S3 buckets and upload objects, explicitly denying read/download"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = [
-          "s3:CreateBucket", 
-          "s3:PutObject",    
-          "s3:PutObjectAcl", 
-        ]
-        Resource = "*" 
-      },
-      {
-        Effect   = "Deny"     
-        Action   = [
-          "s3:Get*",  
-          "s3:List*", 
-        ]
-        Resource = "*" 
-      },
-    ]
-  })
-}
-
-# Attach S3 Creator/Uploader Policy to the Role
-resource "aws_iam_role_policy_attachment" "s3_creator_uploader_attachment" {
-  role       = aws_iam_role.s3_creator_uploader_role.name
-  policy_arn = aws_iam_policy.s3_creator_uploader_policy.arn
-}
-
-# --- IAM Instance Profile for S3 Creator/Uploader Role ---
-# An instance profile is required to attach an IAM role to an EC2 instance.
-resource "aws_iam_instance_profile" "s3_creator_uploader_profile" {
-  name_prefix = "s3-creator-uploader-profile"
-  role = aws_iam_role.s3_creator_uploader_role.name # Reference the role created above
-
-  tags = {
-    Name = "S3CreatorUploaderInstanceProfile-${var.stage}"
-  }
-}
+    Name = "techeazy-readonly-instance"
+    Stage = var.stage
+  }   
+}         
