@@ -9,7 +9,13 @@ on:
     tags:
       - deploy-dev
       - deploy-prod
-
+      
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Deployment stage (e.g., dev, prod)"
+        required: true
+        default: "dev" 
 jobs:
   deploy:
     name: Deploy to EC2
@@ -40,10 +46,11 @@ jobs:
 
       - name: Terraform apply
         working-directory: ./terraform
-        run: terraform apply -auto-approve -var-file="dev.tfvars"
+        run: terraform apply -auto-approve -var="stage=${{ github.event.inputs.stage || 'dev' }}" -var-file="dev.tfvars"
 
-      - name: Get EC2 Public IP
-        id: ec2_ip
+
+      - name: Get EC2 Public IP   
+        id: ec2_ip   
         run: |
           ip=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=techeazy-instance" \
