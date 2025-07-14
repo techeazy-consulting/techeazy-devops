@@ -2,8 +2,7 @@ name: Upload Failed Workflow Logs to S3
 
 on:
   workflow_run:
-    # This must EXACTLY match the 'name:' field in your main workflow (e.g., destroy.yml)
-    workflows: ["destroy infrastructure"] 
+    workflows: ["destroy the infrastructure"]
     types:
       - completed
 
