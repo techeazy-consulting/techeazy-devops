@@ -17,6 +17,9 @@ jobs:
       actions: read   # Required for 'gh run view --log' to fetch workflow logs
 
     steps:
+      - name: Checkout Repository # ADD THIS STEP!
+        uses: actions/checkout@v4 # Use the latest stable version
+
       - name: Configure AWS Credentials for S3 Operations
         uses: aws-actions/configure-aws-credentials@v4
         with:
