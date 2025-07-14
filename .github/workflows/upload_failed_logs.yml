@@ -12,7 +12,7 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }} 
     
     permissions:
-      contents: read # Required for actions that interact with repo contents (though not strictly for gh cli for logs)
+      contents: read # Required for actions that interact with repo contents
       id-token: write # Required for AWS OIDC authentication
       actions: read   # Required for 'gh run view --log' to fetch workflow logs
 
@@ -27,16 +27,11 @@ jobs:
         id: fetch_logs # Give this step an ID to output the log file path
         run: |
           # Use gh CLI to fetch the full consolidated log for the failed workflow run
-          # ${{ github.token }} is automatically available for gh CLI authentication
-          # --log outputs the raw, consolidated text log
-          # --no-color ensures no ANSI escape codes in the log file
-          # Save it to a file with a unique name based on the run ID
           WORKFLOW_LOG_FILENAME="workflow_run_${{ github.event.workflow_run.id }}_logs.txt"
           
           echo "Fetching logs for run ID ${{ github.event.workflow_run.id }}..."
           gh run view ${{ github.event.workflow_run.id }} --log --no-color > "${WORKFLOW_LOG_FILENAME}"
           
-          # Check if the log file was actually created and has content
           if [ ! -s "${WORKFLOW_LOG_FILENAME}" ]; then
             echo "Error: Log file '${WORKFLOW_LOG_FILENAME}' is empty or not created. Exiting."
             exit 1
@@ -45,7 +40,7 @@ jobs:
           echo "Log file saved as: ${WORKFLOW_LOG_FILENAME}"
           echo "log_file_path=${WORKFLOW_LOG_FILENAME}" >> $GITHUB_OUTPUT
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }} # Ensure gh CLI is authenticated
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Ensure gh CLI is authenticated
 
       - name: Upload Logs to S3
         id: upload_logs_to_s3 # Give this step an ID for its output
@@ -53,13 +48,11 @@ jobs:
           LOCAL_LOG_PATH="${{ steps.fetch_logs.outputs.log_file_path }}"
           
           # Define the S3 key for the uploaded plain text log file
-          # We'll put it under a simple 'failed-workflow-logs/' prefix, using lowercase name
-          S3_LOG_KEY="failed-workflow-logs/${{ lower(github.event.workflow_run.name) }}/${{ github.event.workflow_run.id }}_full_logs.txt"
+          # IMPORTANT: S3 keys are case-sensitive. The workflow name will be used as is.
+          S3_LOG_KEY="failed-workflow-logs/${{ github.event.workflow_run.name }}/${{ github.event.workflow_run.id }}_full_logs.txt"
           S3_FULL_PATH="s3://sumit-4254/${S3_LOG_KEY}"
           
           echo "Uploading ${LOCAL_LOG_PATH} to ${S3_FULL_PATH}..."
           aws s3 cp "${LOCAL_LOG_PATH}" "${S3_FULL_PATH}"
           
           echo "uploaded_s3_path=${S3_FULL_PATH}" >> $GITHUB_OUTPUT
-      
-     
