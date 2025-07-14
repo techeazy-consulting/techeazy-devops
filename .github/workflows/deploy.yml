@@ -47,7 +47,7 @@ jobs:
       - name: Terraform apply
         working-directory: ./terraform
         run: terraform apply -auto-approve -var="stage=${{ github.event.inputs.stage || 'dev' }}" -var-file="dev.tfvars"
-
+        
 
       - name: Get EC2 Public IP   
         id: ec2_ip   

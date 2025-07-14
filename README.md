@@ -1,5 +1,5 @@
 ````markdown
-## 🚀 Techeazy DevOps Assignment 3 - Fully Automated EC2 App Deployment
+# 🚀 Techeazy DevOps Assignment 3 - Fully Automated EC2 App Deployment
 
 This project automates the complete deployment of a Spring Boot application on an AWS EC2 instance using **Terraform** and **GitHub Actions**. It ensures all logs are stored in **S3**, enforces proper IAM roles, and the deployment is triggered seamlessly on every push or via the GitHub Actions UI — no manual steps needed!
 
