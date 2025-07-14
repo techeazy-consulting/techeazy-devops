@@ -30,7 +30,9 @@ jobs:
           WORKFLOW_LOG_FILENAME="workflow_run_${{ github.event.workflow_run.id }}_logs.txt"
           
           echo "Fetching logs for run ID ${{ github.event.workflow_run.id }}..."
-          gh run view ${{ github.event.workflow_run.id }} --log --no-color > "${WORKFLOW_LOG_FILENAME}"
+          # --- CRITICAL CORRECTION: REMOVE --no-color ---
+          gh run view ${{ github.event.workflow_run.id }} --log > "${WORKFLOW_LOG_FILENAME}"
+          # --- END CRITICAL CORRECTION ---
           
           if [ ! -s "${WORKFLOW_LOG_FILENAME}" ]; then
             echo "Error: Log file '${WORKFLOW_LOG_FILENAME}' is empty or not created. Exiting."
