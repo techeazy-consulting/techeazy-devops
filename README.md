@@ -1,3 +1,30 @@
+# Terraform Setup: Grafana with AWS Athena for GitHub Actions Logs
+This Terraform configuration automates the deployment of the necessary AWS infrastructure to enable monitoring and visualization of GitHub Actions workflow failure logs using Grafana and AWS Athena.
+
+## Key Components Deployed
+  This Terraform code provisions the following AWS resources:
+ **Amazon S3 Buckets:**
+  One for storing raw GitHub Actions workflow logs.
+  One dedicated bucket for Athena query results (with an aggressive lifecycle policy for cost optimization).
+
+  **AWS IAM:**
+  An IAM Role and Instance Profile for the Grafana EC2 instance, granting it secure, temporary credentials to interact with Athena, S3, and Glue.
+  Necessary IAM Policies to define precise permissions.
+
+  **Amazon EC2 Instance:**
+  A virtual server that hosts the Grafana application (running in a Docker container).
+
+  **AWS Glue Data Catalog:**
+  A database and table definition that tells Athena how to interpret the structure of your raw log files in S3.
+
+## How to Use This Code
+  Initialize Terraform:
+  ```
+  cd admin-alerting-setup
+  terraform init
+  terraform apply
+  ```
+
 # Assignment 5: Enhanced CI/CD with Comprehensive CloudWatch Monitoring and Alerting
 
 ## Prerequisites
