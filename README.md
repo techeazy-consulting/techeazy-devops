@@ -1,7 +1,7 @@
 # Terraform Setup: Grafana with AWS Athena for GitHub Actions Logs
 This Terraform configuration automates the deployment of the necessary AWS infrastructure to enable monitoring and visualization of GitHub Actions workflow failure logs using Grafana and AWS Athena.
 
-# GitHub Actions Workflow for Log Upload (upload_failed_logs.yml) :-# This workflow is designed to automatically capture and upload logs from failed GitHub Actions workflow runs to your designated S3 bucket.
+** GitHub Actions Workflow for Log Upload (upload_failed_logs.yml) :-** This workflow is designed to automatically capture and upload logs from failed GitHub Actions workflow runs to your designated S3 bucket.
 
 ## Key Components Deployed
   This Terraform code provisions the following AWS resources:
