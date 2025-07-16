@@ -82,11 +82,19 @@ jobs:
           key: ${{ secrets.INSTANCE_KEY }}
           script: |
             cd /home/ec2-user
-            rm -rf techeazy-devops
-            
+
+            echo "Current directory: $(pwd)"
+            echo "User: $(whoami)"
+            sudo rm -rf techeazy-devops
+
+            echo "Testing Git access..."
+            git ls-remote https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
+  
+            echo "Available branches:"
+            git ls-remote --heads https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
             echo "Cloning repo inside EC2"
               
-            git clone --branch feature/devops-assignment-4 https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
+            git clone --verbose --branch feature/devops-assignment-4 https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
              
             cd /home/ec2-user/techeazy-devops/scripts
             chmod +x deploy.sh
