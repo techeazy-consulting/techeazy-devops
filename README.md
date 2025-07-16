@@ -1,4 +1,4 @@
-https://github.com/sumit-patil-24/tech__eazy_sumit-patil-24_devops/issues/2#issue-3234147707
+![image](https://github.com/sumit-patil-24/tech__eazy_sumit-patil-24_devops/issues/2#issue-3234147707)
 
 # Terraform Setup: Grafana with AWS Athena for GitHub Actions Logs
 This Terraform configuration automates the deployment of the necessary AWS infrastructure to enable monitoring and visualization of GitHub Actions workflow failure logs using Grafana and AWS Athena.
