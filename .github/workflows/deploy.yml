@@ -90,16 +90,27 @@ jobs:
             git ls-remote https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
 
             echo "Cloning repo inside EC2"
-            git clone --verbose https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
+            git clone --depth 1 --branch feature/devops-assignment-4 https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
 
-            cd techeazy-devops
-            git checkout feature/devops-assignment-4
+            cd /home/ec2-user/techeazy-devops
 
-            cd scripts
-            chmod +x deploy.sh
+            echo "---- Checking config files ----"
+            echo "Stage parameter: ${{ github.event.inputs.stage }}"
+            echo "Available config files:"
+            ls -la configs/
+            
+            echo "Contents of dev.json:"
+            cat configs/dev.json
+            
+            echo "Contents of prod.json:"
+            cat configs/prod.json
 
             echo "---- Running deploy.sh ----"
-            ./deploy.sh ${{ github.event.inputs.stage == 'prod' && 'techeazy-bucket-prod' || 'techeazy-bucket' }} ${{ github.event.inputs.stage }}
+            cd scripts
+            chmod +x deploy.sh
+            
+            # Run with verbose output to see where it fails
+            bash -x ./deploy.sh ${{ github.event.inputs.stage == 'prod' && 'techeazy-bucket-prod' || 'techeazy-bucket' }} ${{ github.event.inputs.stage }}
             DEPLOY_STATUS=$?
 
             if [ $DEPLOY_STATUS -ne 0 ]; then
