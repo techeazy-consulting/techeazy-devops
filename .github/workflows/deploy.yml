@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/devops-assignment-3
+      - feature/devops-assignment-4
 
     tags:
       - deploy-dev
@@ -46,7 +47,10 @@ jobs:
 
       - name: Terraform apply
         working-directory: ./terraform
-        run: terraform apply -auto-approve -var="stage=${{ github.event.inputs.stage || 'dev' }}" -var-file="dev.tfvars"
+        run: terraform apply -auto-approve \
+            -var="stage=${{ github.event.inputs.stage  }}" \
+            -var-file="${{ github.event.inputs.stage }}.tfvars" \
+            -var="github_token=${{ secrets.REPO_ACCESS_TOKEN }}"
         
 
       - name: Get EC2 Public IP   
@@ -83,7 +87,7 @@ jobs:
             git clone --branch feature/devops-assignment-3 https://github.com/sohampatil44/techeazy-devops.git || true
             cd techeazy-devops/scripts
             chmod +x deploy.sh
-            ./deploy.sh techeazy-bucket
+            ./deploy.sh techeazy-bucket ${{ github.event.inputs.stage }}
 
       - name: Verify App Health
         run: |

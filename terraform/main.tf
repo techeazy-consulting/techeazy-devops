@@ -13,6 +13,9 @@ resource "aws_instance" "instance1" {
     security_groups = [var.security_group_id]
     user_data = templatefile("${path.module}/user_data.tmpl.sh", {
     bucket_name = var.bucket_name
+    repo_url = var.repo_url
+    github_token = var.repo_private ? "${var.github_token}": ""
+
   })
 
     iam_instance_profile = aws_iam_instance_profile.ec2_profile.name

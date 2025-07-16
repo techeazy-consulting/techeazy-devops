@@ -14,3 +14,5 @@ stage  = "Dev"
 
 bucket_name = "techeazy-bucket"
 
+repo_private = false
+

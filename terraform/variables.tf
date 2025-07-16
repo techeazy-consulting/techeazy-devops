@@ -47,3 +47,12 @@ variable "bucket_name" {
     description = "bucket name"
     type = string 
 }
+
+variable "github_token" {
+    default = ""
+  
+}
+variable "repo_private" {
+    default = false
+  
+}
