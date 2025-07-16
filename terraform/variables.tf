@@ -32,7 +32,7 @@ variable "security_group_id" {
 variable "repo_url" {
     description = "url of git repo"
     type = string
-    default = "https://github.com/techeazy-consulting/techeazy-devops.git"
+    default = "https://github.com/sohampatil44/techeazy-devops.git"
   
 }
 
@@ -46,4 +46,13 @@ variable "stage" {
 variable "bucket_name" {
     description = "bucket name"
     type = string 
+}
+
+variable "github_token" {
+    default = ""
+  
+}
+variable "repo_private" {
+    default = false
+  
 }

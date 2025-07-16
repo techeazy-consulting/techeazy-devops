@@ -10,9 +10,9 @@ repo_url = "https://github.com/techeazy-consulting/techeazy-devops.git"
 
 security_group_id = "sg-08bb9c90c30368133"
 
-stage  = "Dev"
+stage  = "prod"
 
-bucket_name = "techeazy-bucket"
+bucket_name = "techeazy-bucket-prod"
 
-repo_private = false
+repo_private = true
 
