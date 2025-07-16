@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - feature/devops-assignment-3
-      
     tags:
       - deploy-dev
       - deploy-prod
@@ -74,15 +73,15 @@ jobs:
           sleep 60
           echo "Waiting for EC2 to be ready..."
 
-      - name: Run Deployement Script via SSH
+      - name: Run Deployment Script via SSH
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ env.EC2_PUBLIC_IP }} 
+          host: ${{ env.EC2_PUBLIC_IP }}
           username: ec2-user
           key: ${{ secrets.INSTANCE_KEY }}
           script: |
+            set -e
             cd /home/ec2-user
-
             echo "Current directory: $(pwd)"
             echo "User: $(whoami)"
             sudo rm -rf techeazy-devops
@@ -90,31 +89,37 @@ jobs:
             echo "Testing Git access..."
             git ls-remote https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
 
-            echo "Available branches:"
-            git ls-remote --heads https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
-
             echo "Cloning repo inside EC2"
             git clone --verbose https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
 
             cd techeazy-devops
-
-            echo "Checking out branch: feature/devops-assignment-4"
             git checkout feature/devops-assignment-4
 
             cd scripts
             chmod +x deploy.sh
-            ./deploy.sh ${{ github.event.inputs.stage == 'prod' && 'techeazy-bucket-prod' || 'techeazy-bucket' }} ${{ github.event.inputs.stage }}
 
+            echo "---- Running deploy.sh ----"
+            ./deploy.sh ${{ github.event.inputs.stage == 'prod' && 'techeazy-bucket-prod' || 'techeazy-bucket' }} ${{ github.event.inputs.stage }}
+            DEPLOY_STATUS=$?
+
+            if [ $DEPLOY_STATUS -ne 0 ]; then
+              echo "❌ deploy.sh failed with exit code $DEPLOY_STATUS"
+              echo "Dumping deploy log for debug:"
+              cat /home/ec2-user/deploy.log || echo "No deploy.log found"
+              exit $DEPLOY_STATUS
+            fi
+
+            echo "✅ deploy.sh completed successfully"
 
       - name: Verify App Health
         run: |
           for i in {1..5}; do
             if curl --fail http://${{ env.EC2_PUBLIC_IP }}; then
-              echo "App is healthy"
+              echo "✅ App is healthy"
               exit 0
             fi
-            echo "Retrying in 5s..."
+            echo "Waiting... ($i/5)"
             sleep 5
           done
-          echo "App health check failed"
+          echo "❌ App health check failed"
           exit 1
