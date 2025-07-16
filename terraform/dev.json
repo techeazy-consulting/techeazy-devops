@@ -4,6 +4,8 @@
   "instance_type_value": "t2.micro",
   "key_name_value": "my-key-pair",
   "git_repo_path": "https://github.com/abhinayakumar130/tech_eazy_devops_abhinayakumar130.git",
+  "repo_url": "https://github.com/abhinayakumar130/tech_eazy_devops_abhinayakumar130.git",
+  "repo_is_private": false,
   "repo_dir_name": "tech_eazy_devops_abhinayakumar130",
   "java_version_value": "openjdk-21-jdk-headless",
   "aws_region": "us-east-1",

@@ -1,6 +1,8 @@
 #!/bin/bash
 
 REPO_URL="${REPO_URL}"
+REPO_IS_PRIVATE="${REPO_IS_PRIVATE}"
+GITHUB_TOKEN="${GITHUB_TOKEN}"
 JAVA_VERSION="${JAVA_VERSION}"
 REPO_DIR_NAME="${REPO_DIR_NAME}"
 STOP_INSTANCE="${STOP_INSTANCE}"
@@ -24,7 +26,17 @@ export HOME=/root
 echo "HOME environment variable set to: $HOME"
 
 cd /opt
-git clone "$REPO_URL"
+
+# Clone based on repo visibility
+if [ "$REPO_IS_PRIVATE" = "true" ]; then
+  echo "Cloning private repository using token..."
+  REPO_URL_WITH_TOKEN="https://$${GITHUB_TOKEN}@$${REPO_URL#https://}"
+  git clone "$REPO_URL_WITH_TOKEN"
+else
+  echo "Cloning public repository..."
+  git clone "$REPO_URL"
+fi
+
 cd "$REPO_DIR_NAME"
 chmod +x mvnw
 

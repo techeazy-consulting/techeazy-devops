@@ -28,7 +28,7 @@ variable "key_name_value" {
     default     = "new-key.pem"
 }
 
-variable "repo_url_value" {
+variable "repo_url" {
     description = "the github url of repository to clone"
     type        = string
     default     = "https://github.com/abhinayakumar130/tech_eazy_devops_abhinayakumar130.git"
@@ -71,7 +71,9 @@ variable "git_repo_path" {
 }
 
 variable "enable_readonly_ec2" {
+  description = "Set to true to launch an additional EC2 instance with read-only S3 access."
   type    = bool
   default = false
+
 }
 

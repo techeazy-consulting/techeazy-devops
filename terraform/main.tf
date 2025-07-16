@@ -174,14 +174,14 @@ resource "aws_instance" "example1" {
   iam_instance_profile   = aws_iam_instance_profile.s3_creator_uploader_profile.name
 
   user_data_base64 = base64encode(templatefile("./${var.stage}_script.sh", {
-    REPO_URL              = local.config.git_repo_path,
+    REPO_URL              = local.config.repo_url,
+    REPO_IS_PRIVATE       = local.config.repo_is_private,
     JAVA_VERSION          = local.config.java_version_value,
     REPO_DIR_NAME         = local.config.repo_dir_name,
     STOP_INSTANCE         = local.config.stop_after_minutes,
     S3_BUCKET_NAME        = local.config.s3_bucket_name,
     AWS_REGION_FOR_SCRIPT = local.config.aws_region,
-    GITHUB_TOKEN          = var.github_token,
-    GIT_REPO_PATH         = local.config.git_repo_path
+    GITHUB_TOKEN          = var.github_token
   }))
 
   tags = {
