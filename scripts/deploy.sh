@@ -2,7 +2,7 @@
 set -e
 
 # Log everything
-exec > >(tee /var/log/deploy.log | logger -t deploy-script) 2>&1
+exec > >(tee /home/ec2-user/deploy.log | logger -t deploy-script) 2>&1
 
 if [ -z "$1" ] || [ -z "$2" ]; then
   echo "Usage: ./deploy.sh <bucket_name> <stage>"
