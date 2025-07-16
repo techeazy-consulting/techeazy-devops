@@ -81,14 +81,16 @@ jobs:
           username: ec2-user
           key: ${{ secrets.INSTANCE_KEY }}
           script: |
-            if [ ! -d "/home/ec2-user/techeazy-devops" ]; then
-              echo "Cloning repo inside EC2"
-              cd /home/ec2-user
-              git clone https://github.com/sohampatil44/techeazy-devops.git
-            fi  
+            cd /home/ec2-user
+            rm -rf techeazy-devops
+            
+            echo "Cloning repo inside EC2"
+              
+            git clone --branch feature/devops-assignment-4 https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
+             
             cd /home/ec2-user/techeazy-devops/scripts
             chmod +x deploy.sh
-            ./deploy.sh techeazy-bucket ${{ github.event.inputs.stage }}
+            ./deploy.sh ${{ github.event.inputs.stage == 'prod' && 'techeazy-bucket-prod' || 'techeazy-bucket' }} ${{ github.event.inputs.stage }}
 
       - name: Verify App Health
         run: |

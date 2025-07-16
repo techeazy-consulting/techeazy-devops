@@ -18,13 +18,7 @@ echo "Starting deployment for stage: $stage"
 sudo yum update -y
 sudo yum install -y java-21-amazon-corretto git
 
-# Decide repo URL based on token availability
-if [ -f /home/ec2-user/token.txt ]; then
-  github_token=$(cat /home/ec2-user/token.txt)
-  git clone --branch "$stage" https://${github_token}@github.com/sohampatil44/techeazy-devops.git
-else
-  git clone --branch "$stage" https://github.com/sohampatil44/techeazy-devops.git
-fi
+
 
 cd /home/ec2-user/techeazy-devops
 sudo chown -R ec2-user:ec2-user .
