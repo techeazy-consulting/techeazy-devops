@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - feature/devops-assignment-3
-      - feature/devops-assignment-4
+      
     tags:
       - deploy-dev
       - deploy-prod
