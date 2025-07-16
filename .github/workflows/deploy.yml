@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - feature/devops-assignment-3
-      - feature/devops-assignment-4
+      
 
     tags:
       - deploy-dev
@@ -49,8 +49,8 @@ jobs:
       - name: Terraform apply
         working-directory: ./terraform
         run: terraform apply -auto-approve \
-            -var="stage=${{ env.STAGE }}" \
-            -var-file="${{ env.STAGE }}.tfvars" \
+            -var="stage=${{ github.event.inputs.stage }}" \
+            -var-file="${{ github.event.inputs.stage }}.tfvars" \
             -var="github_token=${{ secrets.REPO_ACCESS_TOKEN }}"
         
 
