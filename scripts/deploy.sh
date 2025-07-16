@@ -1,8 +1,13 @@
 #!/bin/bash
 set -e
 
+# Ensure log file is writable
+LOG_FILE="/home/ec2-user/deploy.log"
+touch "$LOG_FILE"
+chmod 666 "$LOG_FILE"
+
 # Log everything
-exec > >(tee /home/ec2-user/deploy.log | logger -t deploy-script) 2>&1
+exec > >(tee "$LOG_FILE" | logger -t deploy-script) 2>&1
 
 if [ -z "$1" ] || [ -z "$2" ]; then
   echo "Usage: ./deploy.sh <bucket_name> <stage>"
@@ -18,13 +23,11 @@ echo "Starting deployment for stage: $stage"
 sudo yum update -y
 sudo yum install -y java-21-amazon-corretto git
 
-
-
 cd /home/ec2-user/techeazy-devops
 sudo chown -R ec2-user:ec2-user .
 
 # Copy config
-CONFIG_FILwereE="/home/ec2-user/techeazy-devops/configs/${stage}.json"
+CONFIG_FILE="/home/ec2-user/techeazy-devops/configs/${stage}.json"
 DEST="/home/ec2-user/techeazy-devops/configs/config.json"
 cp "$CONFIG_FILE" "$DEST"
 echo "Copied $CONFIG_FILE to $DEST"
