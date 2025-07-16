@@ -32,7 +32,7 @@ variable "security_group_id" {
 variable "repo_url" {
     description = "url of git repo"
     type = string
-    default = "https://github.com/techeazy-consulting/techeazy-devops.git"
+    default = "https://github.com/sohampatil44/techeazy-devops.git"
   
 }
 

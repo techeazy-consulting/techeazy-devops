@@ -5,18 +5,17 @@ on:
     branches:
       - main
       - feature/devops-assignment-3
-      
-
+      - feature/devops-assignment-4
     tags:
       - deploy-dev
       - deploy-prod
-      
   workflow_dispatch:
     inputs:
       stage:
         description: "Deployment stage (e.g., dev, prod)"
         required: true
-        default: "dev" 
+        default: "dev"
+
 jobs:
   deploy:
     name: Deploy to EC2
@@ -32,7 +31,7 @@ jobs:
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
-        with: 
+        with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
@@ -40,7 +39,7 @@ jobs:
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.7    
+          terraform_version: 1.5.7
 
       - name: Terraform init
         working-directory: ./terraform
@@ -53,18 +52,15 @@ jobs:
             -var="stage=${{ github.event.inputs.stage || 'dev' }}" \
             -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars" \
             -var="github_token=${{ secrets.REPO_ACCESS_TOKEN }}"
-        
 
-      - name: Get EC2 Public IP   
-        id: ec2_ip   
+      - name: Get EC2 Public IP
+        id: ec2_ip
         run: |
           ip=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=techeazy-instance" \
             --query "Reservations[*].Instances[*].PublicIpAddress" \
             --output text | tr -d '\r' | tr -d '\n' | awk '{print $1}')
-
-          # Validate IP format
-          if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+          if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "EC2_PUBLIC_IP=$ip" >> $GITHUB_ENV
             echo "ec2_public_ip=$ip" >> $GITHUB_OUTPUT
             echo "::debug::EC2_PUBLIC_IP is $ip"
@@ -78,16 +74,19 @@ jobs:
           sleep 60
           echo "Waiting for EC2 to be ready..."
 
-      - name: Run Deployment Script via SSH
+      - name: Run Deployement Script via SSH
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ env.EC2_PUBLIC_IP }}
+          host: ${{ env.EC2_PUBLIC_IP }} 
           username: ec2-user
           key: ${{ secrets.INSTANCE_KEY }}
           script: |
-            cd /home/ec2-user
-            git clone --branch feature/devops-assignment-3 https://github.com/sohampatil44/techeazy-devops.git || true
-            cd techeazy-devops/scripts
+            if [ ! -d "/home/ec2-user/techeazy-devops" ]; then
+              echo "Cloning repo inside EC2"
+              cd /home/ec2-user
+              git clone https://github.com/sohampatil44/techeazy-devops.git
+            fi  
+            cd /home/ec2-user/techeazy-devops/scripts
             chmod +x deploy.sh
             ./deploy.sh techeazy-bucket ${{ github.event.inputs.stage }}
 
