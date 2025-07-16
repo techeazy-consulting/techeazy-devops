@@ -48,7 +48,8 @@ jobs:
 
       - name: Terraform apply
         working-directory: ./terraform
-        run: terraform apply -auto-approve \
+        run: |
+          terraform apply -auto-approve \
             -var="stage=${{ github.event.inputs.stage || 'dev' }}" \
             -var-file="${{ github.event.inputs.stage || 'dev' }}.tfvars" \
             -var="github_token=${{ secrets.REPO_ACCESS_TOKEN }}"
