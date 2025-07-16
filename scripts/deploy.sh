@@ -24,7 +24,7 @@ cd /home/ec2-user/techeazy-devops
 sudo chown -R ec2-user:ec2-user .
 
 # Copy config
-CONFIG_FILE="/home/ec2-user/techeazy-devops/configs/${stage}.json"
+CONFIG_FILwereE="/home/ec2-user/techeazy-devops/configs/${stage}.json"
 DEST="/home/ec2-user/techeazy-devops/configs/config.json"
 cp "$CONFIG_FILE" "$DEST"
 echo "Copied $CONFIG_FILE to $DEST"
