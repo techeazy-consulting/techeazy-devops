@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Log everything
-exec > >(tee /var/log/user-data.log | logger -t user-data) 2>&1
+exec > >(tee /home/ec2-user/user-data.log | logger -t user-data) 2>&1
 
 # Install required packages
 yum update -y
