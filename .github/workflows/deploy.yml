@@ -70,57 +70,38 @@ jobs:
 
       - name: Wait for EC2 SSH
         run: |
-          sleep 60
           echo "Waiting for EC2 to be ready..."
+          sleep 60
 
-      - name: Run Deployment Script via SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ env.EC2_PUBLIC_IP }}
-          username: ec2-user
-          key: ${{ secrets.INSTANCE_KEY }}
-          script: |
-            set -e
-            cd /home/ec2-user
-            echo "Current directory: $(pwd)"
-            echo "User: $(whoami)"
-            sudo rm -rf techeazy-devops
-
-            echo "Testing Git access..."
-            git ls-remote https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
-
-            echo "Cloning repo inside EC2"
-            git clone --depth 1 --branch feature/devops-assignment-4 https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
-
-            cd /home/ec2-user/techeazy-devops
-
-            echo "---- Checking config files ----"
-            echo "Stage parameter: ${{ github.event.inputs.stage }}"
-            echo "Available config files:"
-            ls -la configs/
-            
-            echo "Contents of dev.json:"
-            cat configs/dev.json
-            
-            echo "Contents of prod.json:"
-            cat configs/prod.json
-
-            echo "---- Running deploy.sh ----"
-            cd scripts
-            chmod +x deploy.sh
-            
-            # Run with verbose output to see where it fails
-            bash -x ./deploy.sh ${{ github.event.inputs.stage == 'prod' && 'techeazy-bucket-prod' || 'techeazy-bucket' }} ${{ github.event.inputs.stage }}
-            DEPLOY_STATUS=$?
-
-            if [ $DEPLOY_STATUS -ne 0 ]; then
-              echo "❌ deploy.sh failed with exit code $DEPLOY_STATUS"
-              echo "Dumping deploy log for debug:"
+          - name: Run Deployment Script via SSH
+          uses: appleboy/ssh-action@master
+          with:
+            host: ${{ env.EC2_PUBLIC_IP }}
+            username: ec2-user
+            key: ${{ secrets.INSTANCE_KEY }}
+            script: |
+              set -e
+              cd /home/ec2-user
+              sudo rm -rf techeazy-devops
+        
+              echo "Cloning repo inside EC2"
+              git clone --depth 1 --branch feature/devops-assignment-4 https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
+              cd techeazy-devops/scripts
+              chmod +x deploy.sh
+        
+              echo "---- Running deploy.sh ----"
+              bash -x ./deploy.sh ${{ github.event.inputs.stage == 'prod' && 'techeazy-bucket-prod' || 'techeazy-bucket' }} ${{ github.event.inputs.stage }}
+              DEPLOY_STATUS=$?
+        
+              echo "---- Dumping deploy.log ----"
               cat /home/ec2-user/deploy.log || echo "No deploy.log found"
-              exit $DEPLOY_STATUS
-            fi
-
-            echo "✅ deploy.sh completed successfully"
+        
+              if [ $DEPLOY_STATUS -ne 0 ]; then
+                echo "❌ deploy.sh failed with exit code $DEPLOY_STATUS"
+                exit $DEPLOY_STATUS
+              fi
+        
+              echo "✅ deploy.sh completed successfully"
 
       - name: Verify App Health
         run: |

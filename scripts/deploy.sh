@@ -32,6 +32,10 @@ DEST="/home/ec2-user/techeazy-devops/configs/config.json"
 cp "$CONFIG_FILE" "$DEST"
 echo "Copied $CONFIG_FILE to $DEST"
 
+echo "Files in current dir before build:"
+ls -la
+
+
 # Build
 chmod +x mvnw
 sudo -u ec2-user ./mvnw clean package
