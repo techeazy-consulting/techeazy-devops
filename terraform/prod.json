@@ -6,7 +6,7 @@
   "git_repo_path": "https://github.com/abhinayakumar130/tech_eazy_devops_abhinayakumar130.git",
   "repo_url": "https://github.com/abhinayakumar130/tech_eazy_devops_private.git",
   "repo_is_private": true,
-  "repo_dir_name": "tech_eazy_devops_abhinayakumar130",
+  "repo_dir_name": "tech_eazy_devops_private",
   "java_version_value": "openjdk-21-jdk-headless",
   "aws_region": "us-east-1",
   "s3_bucket_name": "bucket-4254",
