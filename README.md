@@ -30,7 +30,15 @@ This workflow is designed to automatically capture and upload logs from failed G
 # Notification for admim
 ![Image of contact form error message](https://github.com/user-attachments/assets/ec4ebf93-0d89-4665-b359-0f855cf58a7c)
 
-grafana setup
+## Setup Grafana locally
+```
+sudo apt update
+sudo apt install docker.io -y
+sudo  usermod -aG docker ubuntu
+newgrp docker 
+docker volume create grafana-storage
+docker run -d -p 3000:3000 --name grafana --volume grafana-storage:/var/lib/grafana grafana/grafana-enterprise
+```
 
 login admin:admin
 
@@ -43,11 +51,11 @@ Workgroup: primary
 
 save &  test
 
-# Athena Deatils
+## Athena Deatils
 ![athena](https://github.com/user-attachments/assets/b41b820e-fa95-42d9-983a-d64c28534027)
 
 dashboard > virtualization > run query
-
+```
 SELECT log_entry
 FROM github_actions_logs.workflow_failure_logs
 WHERE log_entry LIKE '%error%' -- Look for lines containing "error"
@@ -56,6 +64,7 @@ WHERE log_entry LIKE '%error%' -- Look for lines containing "error"
    OR log_entry LIKE '%exception%' -- Or "exception"
    -- Add other keywords relevant to your infrastructure destroy process (e.g., 'denied', 'permission', 'resource not found', 'invalid argument')
 LIMIT 50;
+```
 # deasboard after running query it showing errors of different workflows.
 ![grafana](https://github.com/user-attachments/assets/a8c450c1-53e7-4803-9142-ab716ec9e951)
 
