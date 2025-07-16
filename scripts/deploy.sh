@@ -7,7 +7,12 @@ touch "$LOG_FILE"
 chmod 666 "$LOG_FILE"
 
 # Log everything
-exec > >(tee "$LOG_FILE" | logger -t deploy-script) 2>&1
+echo "Checking if logger exists..."
+if ! command -v logger >/dev/null 2>&1; then
+  echo "⚠️ logger not found — this might cause script failure"
+fi
+
+exec > >(tee "$LOG_FILE") 2>&1
 
 echo "Starting deployment for stage: $stage"
 
