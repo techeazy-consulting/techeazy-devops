@@ -24,6 +24,7 @@ jobs:
 
     env:
       AWS_REGION: us-east-1
+      STAGE: ${{ github.event.inputs.stage || 'dev' }}
 
     steps:
       - name: Checkout code
@@ -48,8 +49,8 @@ jobs:
       - name: Terraform apply
         working-directory: ./terraform
         run: terraform apply -auto-approve \
-            -var="stage=${{ github.event.inputs.stage  }}" \
-            -var-file="${{ github.event.inputs.stage }}.tfvars" \
+            -var="stage=$STAGE" \
+            -var-file="$STAGE.tfvars" \
             -var="github_token=${{ secrets.REPO_ACCESS_TOKEN }}"
         
 
