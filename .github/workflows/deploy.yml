@@ -86,7 +86,7 @@ jobs:
             
             echo "Cloning repo inside EC2"
               
-            git clone --branch feature/devops-assignment-4 https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
+            git clone --branch feature/devops-assignment-4 https://x-access-token:${{ secrets.REPO_ACCESS_TOKEN }}@github.com/sohampatil44/techeazy-devops.git
              
             cd /home/ec2-user/techeazy-devops/scripts
             chmod +x deploy.sh
