@@ -10,6 +10,8 @@ This project demonstrates how to provision, configure, and deploy EC2 instances 
 
 - Assignment 3: CI/CD pipeline for multi-stage deployments (dev, qa, prod) using GitHub Actions.
 
+- Assignment 4: CI/CD pipeline enhancement with parameterized multi-stage automation, Private/Public GitHub Config Handling, and environment-based log routing.
+
 
 ## 🧰 Prerequisites
 - AWS Account (with access key/secret)
@@ -63,6 +65,18 @@ This project demonstrates how to provision, configure, and deploy EC2 instances 
 
   - Health check added post-deployment to validate the running app on port 80.
 
+📌 **Assignment 4: Enhanced CI/CD Automation with Secure GitHub Integration**
+
+  - Parameterized multi-stage deployment using Terraform and GitHub Actions.  
+
+  - Secure GitHub token management for private/public repos.  
+
+  - Automatically clone repo using token if private; skip if public.  
+
+  - S3 logs are uploaded to `s3://your-bucket-name/logs/<stage>/` post deployment.  
+  
+  - Includes health check verification step to validate successful app deployment.
+  
 ## 🚀 How It Works
 
 **1️⃣ Trigger Deployment**
