@@ -16,7 +16,7 @@ output "readonly_public_ip" {
   value       = length(aws_instance.readonly_ec2) > 0 ? aws_instance.readonly_ec2[0].public_ip : null
 }
 
-output "repo_url" {
-  description = "GitHub repository URL"
-  value       = local.config.repo_url
+output "repo_dir_name" {
+  description = "GitHub repository name"
+  value       = local.config.repo_dir_name
 }
