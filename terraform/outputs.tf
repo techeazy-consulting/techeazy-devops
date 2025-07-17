@@ -18,5 +18,5 @@ output "readonly_public_ip" {
 
 output "repo_url" {
   description = "GitHub repository URL"
-  value       = var.repo_url
+  value       = local.config.repo_url
 }
