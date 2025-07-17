@@ -29,12 +29,9 @@ cd /opt
 
 # Clone based on repo visibility
 if [ "$REPO_IS_PRIVATE" = "true" ]; then
-  echo "Cloning private repository using token..."
-  REPO_URL_WITH_TOKEN="https://$${GITHUB_TOKEN}@$${REPO_URL#https://}"
-  git clone "$REPO_URL_WITH_TOKEN"
+  git clone https://$GITHUB_TOKEN@github.com/abhinayakumar130/tech_eazy_devops_private.git
 else
-  echo "Cloning public repository..."
-  git clone "$REPO_URL"
+  git clone https://github.com/abhinayakumar130/tech_eazy_devops_abhinayakumar130.git
 fi
 
 cd "$REPO_DIR_NAME"
