@@ -1,0 +1,61 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'destroy'
+
+jobs:
+  terraform-destroy:
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ap-south-2
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Get EC2 Public IP
+        id: get_ip
+        continue-on-error: true
+        run: |
+          for i in {1..5}; do
+            IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=GitHubRunnerEC2" \
+              --query "Reservations[].Instances[].PublicIpAddress" \
+              --output text)
+
+            echo "Attempt $i: EC2 IP = $IP"
+
+            if [ "$IP" != "None" ] && [ -n "$IP" ]; then
+              echo "ip=$IP" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "ip=None" >> $GITHUB_OUTPUT
+          echo "EC2 IP could not be resolved — continuing without parser trigger."
+
+      - name: Trigger Log Parser Over SSH
+        if: steps.get_ip.outputs.ip != 'None'
+        continue-on-error: true
+        run: |
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+          ssh -i key.pem -o StrictHostKeyChecking=no ubuntu@${{ steps.get_ip.outputs.ip }} \
+            'sudo python3 /root/log_parser.py'
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
