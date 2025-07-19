@@ -1,99 +1,100 @@
-name: EC2 Deploy via terraform
+name: Deploy to EC2
 
 on:
   push:
-    branches:
-      - main
-      - feature/devops-assignment-3
-
     tags:
-      - deploy-dev
-      - deploy-prod
-      
+      - 'deploy-*'   # deploy-dev, deploy-qa, deploy-prod
+
   workflow_dispatch:
     inputs:
       stage:
-        description: "Deployment stage (e.g., dev, prod)"
+        description: 'Deployment stage'
         required: true
-        default: "dev" 
+        default: 'dev'
+        options:
+          - dev
+          - qa
+          - prod
+
 jobs:
   deploy:
-    name: Deploy to EC2
     runs-on: ubuntu-latest
 
-    env:
-      AWS_REGION: us-east-1
-
     steps:
+      # Step 1: Determine the deployment stage (from tag or manual input)
+      - name: Set Deployment Stage
+        id: set_stage
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/deploy-* ]]; then
+            STAGE="${GITHUB_REF#refs/tags/deploy-}"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            STAGE="${{ github.event.inputs.stage }}"
+          else
+            echo "❌ Could not determine deployment stage."
+            exit 1
+          fi
+          echo "✅ Stage set to: $STAGE"
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+
+      # Step 2: Checkout the code from GitHub
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
+      # Step 3: Configure AWS credentials from GitHub Secrets
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
-        with: 
+        with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-1
 
-      - name: Install Terraform
+      # Step 4: Setup Terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.7    
+          terraform_version: '1.6.0'
 
-      - name: Terraform init
+      # Step 5: Run Terraform Init and Apply
+      - name: Apply Terraform configuration
+        env:
+         TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
         working-directory: ./terraform
-        run: terraform init
-
-      - name: Terraform apply
-        working-directory: ./terraform
-        run: terraform apply -auto-approve -var="stage=${{ github.event.inputs.stage || 'dev' }}" -var-file="dev.tfvars"
-        
-
-      - name: Get EC2 Public IP   
-        id: ec2_ip   
         run: |
-          ip=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=techeazy-instance" \
-            --query "Reservations[*].Instances[*].PublicIpAddress" \
-            --output text | tr -d '\r' | tr -d '\n' | awk '{print $1}')
+          terraform init
+          terraform validate
 
-          # Validate IP format
-          if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            echo "EC2_PUBLIC_IP=$ip" >> $GITHUB_ENV
-            echo "ec2_public_ip=$ip" >> $GITHUB_OUTPUT
-            echo "::debug::EC2_PUBLIC_IP is $ip"
-          else
-            echo "::error::Invalid IP address format: $ip"
+          terraform apply -auto-approve \
+            -var-file="${{ steps.set_stage.outputs.stage }}.json" \
+            -var="stage=${{ steps.set_stage.outputs.stage }}" \
+            -var="github_token=${{ secrets.GH_TOKEN }}"
+
+      # Step 6: Perform health check on the deployed EC2 instance
+      - name: Validate App Health
+        id: health_check
+        run: |
+          STAGE="${{ steps.set_stage.outputs.stage }}"
+
+          echo "--- Fetching EC2 Public IP for stage: $STAGE"
+          EC2_PUBLIC_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=MyInstance-$STAGE" \
+            --query 'Reservations[].Instances[].PublicIpAddress' \
+            --output text)
+
+          if [[ -z "$EC2_PUBLIC_IP" ]]; then
+            echo "❌ Could not retrieve EC2 Public IP."
             exit 1
           fi
 
-      - name: Wait for EC2 SSH
-        run: |
-          sleep 60
-          echo "Waiting for EC2 to be ready..."
+          echo "✅ EC2 Public IP: $EC2_PUBLIC_IP"
+          echo "ip=$EC2_PUBLIC_IP" >> $GITHUB_OUTPUT
 
-      - name: Run Deployment Script via SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ env.EC2_PUBLIC_IP }}
-          username: ec2-user
-          key: ${{ secrets.INSTANCE_KEY }}
-          script: |
-            cd /home/ec2-user
-            git clone --branch feature/devops-assignment-3 https://github.com/sohampatil44/techeazy-devops.git || true
-            cd techeazy-devops/scripts
-            chmod +x deploy.sh
-            ./deploy.sh techeazy-bucket
+          echo "--- Waiting 4 minutes for the app to initialize..."
+          sleep 240
 
-      - name: Verify App Health
-        run: |
-          for i in {1..5}; do
-            if curl --fail http://${{ env.EC2_PUBLIC_IP }}; then
-              echo "App is healthy"
-              exit 0
-            fi
-            echo "Retrying in 5s..."
-            sleep 5
-          done
-          echo "App health check failed"
-          exit 1
+          echo "--- Performing health check at http://$EC2_PUBLIC_IP:80"
+          if curl -f http://$EC2_PUBLIC_IP:80; then
+            echo "✅ App is healthy and responding!"
+          else
+            echo "❌ App is not responding on port 80."
+            exit 1
+          fi

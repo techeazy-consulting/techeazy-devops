@@ -1,75 +1,154 @@
-````markdown
-# 🚀 Techeazy DevOps Assignment 3 - Fully Automated EC2 App Deployment
+# 🚀 DevOps Internship Project – AWS EC2, S3, Terraform & GitHub Actions
+This project demonstrates how to provision, configure, and deploy EC2 instances using Terraform and GitHub Actions. It includes S3 bucket management, IAM roles, and a CI/CD pipeline with multi-environment support (dev, qa, prod).
 
-This project automates the complete deployment of a Spring Boot application on an AWS EC2 instance using **Terraform** and **GitHub Actions**. It ensures all logs are stored in **S3**, enforces proper IAM roles, and the deployment is triggered seamlessly on every push or via the GitHub Actions UI — no manual steps needed!
 
----
+## ✅ Assignments Covered
 
-## ✅ Features
+- Assignment 1: EC2 provisioning with Java install, GitHub repo clone, and app deployment.
 
-- 🌐 **EC2 Instance** with Java 21 + Spring Boot App exposed on **port 80**
-- 📦 **Terraform** code handles all infrastructure provisioning
-- ⚙️ **GitHub Actions**: CI/CD pipeline auto-deploys on push or manual trigger
-- 🔐 **IAM Roles**:
-  - Read-only role for log readers
-  - Write-only role for the EC2 app instance
-- 📁 **Logs automatically uploaded to S3**:
-  - `/app/logs/app.log`
-  - `/system/cloud-init.log`
-- 🗑️ **S3 Lifecycle Rule**: Logs are auto-deleted after 7 days
+- Assignment 2: S3 Bucket creation with lifecycle policies, IAM roles (read-only/write-only), and log uploads.
 
----
+- Assignment 3: CI/CD pipeline for multi-stage deployments (dev, qa, prod) using GitHub Actions.
 
-## 📦 Prerequisites
+- Assignment 4: CI/CD pipeline enhancement with parameterized multi-stage automation, Private/Public GitHub Config Handling, and environment-based log routing.
 
-Before deployment, ensure:
 
-1. Go to your GitHub repo → **Settings** → **Secrets and Variables** → **Actions**
-2. Add these secrets:
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-   - `INSTANCE_KEY` #for this the value is all the content of your key pair.
+## 🧰 Prerequisites
+- AWS Account (with access key/secret)
 
-3. These credentials must have permissions for EC2, S3, and IAM resource management.
+- GitHub Account
 
----
+- GitHub Secrets configured:
 
-## 🚀 How to Deploy
+     - AWS_ACCESS_KEY_ID
 
-You have **two options**:
+     - AWS_SECRET_ACCESS_KEY
 
-### Option 1: Auto Deploy on Push
+     - GH_TOKEN (with repo access)
 
-- Push any commit to your branch (`feature/devops-assignment-3`) to trigger deployment.
+- S3 bucket already created (for remote Terraform state)
 
-### Option 2: Manual Trigger
+## ✅ Assignment Summary
+📌 **Assignment 1: EC2 Instance Deployment using Terraform**
+     
+  - Provision an EC2 instance using Terraform.
 
-1. Go to the **Actions** tab on GitHub
-2. Select **“EC2 Deploy via terraform”**
-3. Click **“Run workflow”**
-4. Watch the logs — Terraform will:
-   - Provision EC2 and S3
-   - Output the **public IP** (see `Terraform Apply` step)
-   - Build and launch the app
+  - Automatically install Java, clone a GitHub repo, and run your app.
 
----
+  - Configure user_data using a shell script for automation.
 
-## 🌐 Access the App
+📌 **Assignment 2: EC2 + S3 Integration**
+     
+  - Create an S3 bucket with:
 
-After deployment:
+       - Private access
 
-1. Open **GitHub → Actions**
-2. Click on the latest successful **Deploy workflow run**
-3. Scroll to the **Terraform Apply** step logs
-4. Look for output like:
+       - Lifecycle configuration
 
-   ```
-   Outputs:
+  - Assign IAM roles to EC2 with S3 read/write permissions.
 
-   ec2_public_ip = "YOUR_PUBLIC_IP"
-   ```
+  - Logs from EC2 are pushed to the respective stage’s S3 path.
 
-5. Visit [http://YOUR_PUBLIC_IP](http://YOUR_PUBLIC_IP) in your browser — you should see the app running! 🎉
+  - Validate S3 access using aws s3 ls and role permissions.
 
----
-````
+📌 **Assignment 3: CI/CD Multi-Stage Deployment with GitHub Actions**
+
+  - Setup GitHub Actions to handle:
+
+       - Deployment (deploy.yml)
+
+       - Destruction (destroy.yml)
+
+  - Use tags like deploy-dev, deploy-qa, etc., or manual trigger with environment input.
+
+  - Environments: dev, qa, prod
+
+  - Health check added post-deployment to validate the running app on port 80.
+
+📌 **Assignment 4: Enhanced CI/CD Automation with Secure GitHub Integration**
+
+  - Parameterized multi-stage deployment using Terraform and GitHub Actions.  
+
+  - Secure GitHub token management for private/public repos.  
+
+  - Automatically clone repo using token if private; skip if public.  
+
+  - S3 logs are uploaded to `s3://your-bucket-name/logs/<stage>/` post deployment.  
+  
+  - Includes health check verification step to validate successful app deployment.
+  
+## 🚀 How It Works
+
+**1️⃣ Trigger Deployment**
+
+Via GitHub:
+
+ - Go to Actions > Deploy to EC2
+
+ - Click Run workflow
+
+ - Select environment: dev / qa / prod
+
+ - Or push a tag like: deploy-dev, deploy-prod, deploy-qa
+
+**2️⃣ GitHub Actions Flow (deploy.yml)**
+
+ - Sets environment stage based on input or tag
+
+ - Initializes and validates Terraform
+
+ - Applies configuration using stage.json
+
+ - Waits for EC2 to be ready
+
+ - Performs health check on port 80
+
+**3️⃣ EC2 Instance Setup**
+
+ - Runs user_data shell script:
+
+ - Installs Java
+
+ - Clones your GitHub repository
+
+ - Starts the application
+
+ - Uploads logs to S3 in path:
+
+       s3://your-bucket-name/logs/dev/
+       s3://your-bucket-name/logs/qa/
+       s3://your-bucket-name/logs/prod/
+
+**4️⃣ Monitor Deployment**
+
+  - The workflow run will start and show progress in GitHub Actions
+
+  - Green checkmarks indicate successful steps
+
+**5️⃣ Destroy Infrastructure**
+
+To tear down:
+
+  - Go to Actions > Destroy EC2 Infrastructure
+
+  - Run workflow and select the stage
+
+
+## 🧪 Health Check Logic
+
+ - After EC2 deployment, GitHub Actions:
+
+     - Waits for public IP
+
+     - Pings http://<EC2_IP> on port 80
+
+
+## 📌 Notes
+    
+    1. Each stage uses its own .json config and shell script.
+
+    2. Terraform backend is stored in S3.
+
+    3. IAM role policies ensure only that instance can access its environment's logs.
+
+📝 Project by Abhinaya Muthukumar – DevOps Internship
